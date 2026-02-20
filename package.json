@@ -1,0 +1,32 @@
+{
+  "name": "@jonverrier/c4-auto",
+  "version": "0.1.0",
+  "description": "Automated C4 architecture documentation for TypeScript projects",
+  "private": false,
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "build": "tsc",
+    "generate-docs": "ts-node --require tsconfig-paths/register src/generate-docs-cli.ts",
+    "test": "mocha --no-config --require ts-node/register --require tsconfig-paths/register --require ./test/md-require-hook.ts --extensions ts,js test/DirectoryTreeTraverser.test.ts test/ModuleHeaderVisitor.test.ts test/C4DiagramVisitor.test.ts test/DocumentationGenerator.integration.test.ts --exit",
+    "test:e2e": "mocha --no-config --require ts-node/register --require tsconfig-paths/register --require ./test/md-require-hook.ts --extensions ts,js test/DocumentationGenerator.e2e.test.ts --exit",
+    "cover": "nyc --reporter=lcov --reporter=text mocha --no-config --require ts-node/register --require tsconfig-paths/register --require ./test/md-require-hook.ts --extensions ts,js test/DirectoryTreeTraverser.test.ts test/ModuleHeaderVisitor.test.ts test/C4DiagramVisitor.test.ts test/DocumentationGenerator.integration.test.ts --exit"
+  },
+  "dependencies": {
+    "@jonverrier/prompt-repository": "^0.3.12",
+    "minimatch": "^10.0.1"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^24.0.10",
+    "@types/sinon": "^17.0.3",
+    "expect": "^29.7.0",
+    "mocha": "^11.7.1",
+    "nyc": "^17.1.0",
+    "sinon": "^19.0.2",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.3"
+  }
+}
