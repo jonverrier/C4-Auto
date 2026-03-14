@@ -79,13 +79,6 @@ const C4_PROMPT_IDS: Record<EC4DiagramType, string> = {
 /**
  * Formats a Date as a compact YYYYMMDD string.
  */
-// ===Start StrongAI Generated Comment (20260219)===
-// Generates C4 architecture diagram README files for each visited directory using Mermaid output produced by an LLM. It runs after ModuleHeaderVisitor (priority kSecond) so it can consume up-to-date StrongAI header blocks embedded in source files. It targets TypeScript and TSX files, extracts each file's generated header between sentinel comments, and falls back to full source when no sentinel is found. It concatenates these headers into a prompt, scales intro and detail word counts using a square-root curve based on file count, and calls a prompt from a repository to produce either component or context diagrams.
-//
-// Main export: C4DiagramVisitor, an IDirectoryVisitor with fileSpecs and priority. visit coordinates header collection and per-type diagram generation. generateDiagram checks staleness, expands the selected prompt, invokes the chat driver, prepends a datestamp, and writes README.StrongAI.Component.md or README.StrongAI.Context.md. computeWordCounts returns intro/detail sizes. extractHeaderBlock isolates the sentinel block. isOutputStale enforces a time window.
-//
-// Key dependencies: IFileReader and IFileWriter for IO, IChatDriver and IPromptRepository for LLM prompting, EVerbosity for model call settings, InvalidOperationError for missing prompts, and EC4DiagramType, ETimeWindow, EVisitorPriority for orchestration.
-// ===End StrongAI Generated Comment===
 function formatDateYYYYMMDD(date: Date): string {
    const y = date.getFullYear();
    const m = String(date.getMonth() + 1).padStart(2, '0');
