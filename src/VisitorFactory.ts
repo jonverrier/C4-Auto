@@ -66,6 +66,7 @@ export class VisitorFactory {
       const fileReader = new NodeFileReader();
       const fileWriter = new NodeFileWriter();
       const promptRepo = new PromptInMemoryRepository(typedPrompts as IPrompt[]);
+      // EModel.kLarge maps to gpt-4o (OpenAI's flagship model) via @jonverrier/prompt-repository.
       const chatDriver = new ChatDriverFactory().create(EModel.kLarge, EModelProvider.kOpenAI);
 
       const visitors: IDirectoryVisitor[] = [
