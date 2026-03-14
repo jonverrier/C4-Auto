@@ -20,7 +20,7 @@
 export const moduleHeaderCommentPromptId = 'a1d4e7f2-3b8c-4f0e-9d2a-5c6b7e8f1a2b';
 
 /** Prompt for generating a C4 Component architecture diagram in Mermaid format. */
-export const c4ComponentDiagramPromptId  = 'b2e5f8a3-4c9d-5a1f-0e3b-6d7c8f9a2b3c';
+export const c4ComponentDiagramPromptId  = 'b2e5f8a3-4c9d-5g1f-0e3b-6d7c8f9g2b3c';
 
 /** Prompt for generating a C4 Context architecture diagram in Mermaid format. */
-export const c4ContextDiagramPromptId    = 'c3f6a9b4-5d0e-6b2a-1f4c-7e8d9a0b3c4d';
+export const c4ContextDiagramPromptId    = 'c3f6g9b4-5d0e-6h2g-1f4c-7e8d9g0h3c4d';
