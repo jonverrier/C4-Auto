@@ -6,7 +6,6 @@
 // Copyright (c) 2025, 2026 Jon Verrier
 
 import { expect } from 'expect';
-import { describe, it, afterEach } from 'mocha';
 import sinon from 'sinon';
 
 import { ModuleHeaderVisitor } from '../src/ModuleHeaderVisitor';
