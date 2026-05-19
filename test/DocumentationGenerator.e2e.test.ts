@@ -11,7 +11,6 @@
 // Copyright (c) 2025, 2026 Jon Verrier
 
 import { expect } from 'expect';
-import { describe, it, before, beforeEach, afterEach } from 'mocha';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
@@ -19,9 +18,6 @@ import * as os from 'os';
 import { DirectoryTreeTraverser, NodeDirectoryReader, MinimatchFileFilter } from '../src/DirectoryTreeTraverser';
 import { VisitorFactory } from '../src/VisitorFactory';
 import { IDocGenOptions, ETimeWindow, EC4DiagramType } from '../src/DocGenTypes';
-
-// Maximum time allowed for LLM calls (5 minutes)
-const E2E_TEST_TIMEOUT_MS = 300000;
 
 // Fixture source files to copy into the temp directory
 const FIXTURE_FILES = [
@@ -35,17 +31,12 @@ const FIXTURES_DIR = path.join(__dirname, 'fixtures');
 // Suite
 // ---------------------------------------------------------------------------
 
-describe('DocumentationGenerator e2e', function () {
-   // Skip entire suite if no API key
-   before(function () {
-      if (!process.env.OPENAI_API_KEY) {
-         this.skip();
-      }
-   });
+const describeE2e = process.env.OPENAI_API_KEY ? describe : describe.skip;
 
+describeE2e('DocumentationGenerator e2e', () => {
    let tempDir: string;
 
-   beforeEach(async function () {
+   beforeEach(async () => {
       // Create a fresh temp directory and copy fixtures into it
       tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'strongai-docgen-'));
       for (const filename of FIXTURE_FILES) {
@@ -55,7 +46,7 @@ describe('DocumentationGenerator e2e', function () {
       }
    });
 
-   afterEach(async function () {
+   afterEach(async () => {
       // Clean up temp directory
       try {
          await fs.rm(tempDir, { recursive: true, force: true });
@@ -65,9 +56,7 @@ describe('DocumentationGenerator e2e', function () {
    });
 
    // -------------------------------------------------------------------------
-   it('generates header comments in all fixture files', async function () {
-      this.timeout(E2E_TEST_TIMEOUT_MS);
-
+   it('generates header comments in all fixture files', async () => {
       const options: IDocGenOptions = {
          rootDir:      tempDir,
          fileSpecs:    ['*.ts', '*.tsx'],
@@ -90,9 +79,7 @@ describe('DocumentationGenerator e2e', function () {
    });
 
    // -------------------------------------------------------------------------
-   it('generates a C4 Component README with a Mermaid fence', async function () {
-      this.timeout(E2E_TEST_TIMEOUT_MS);
-
+   it('generates a C4 Component README with a Mermaid fence', async () => {
       const options: IDocGenOptions = {
          rootDir:        tempDir,
          fileSpecs:      ['*.ts', '*.tsx'],
@@ -113,9 +100,7 @@ describe('DocumentationGenerator e2e', function () {
    });
 
    // -------------------------------------------------------------------------
-   it('generates both Component and Context READMEs when both flags are set', async function () {
-      this.timeout(E2E_TEST_TIMEOUT_MS);
-
+   it('generates both Component and Context READMEs when both flags are set', async () => {
       const options: IDocGenOptions = {
          rootDir:        tempDir,
          fileSpecs:      ['*.ts', '*.tsx'],
@@ -139,9 +124,7 @@ describe('DocumentationGenerator e2e', function () {
    });
 
    // -------------------------------------------------------------------------
-   it('does not regenerate fresh files on a second run', async function () {
-      this.timeout(E2E_TEST_TIMEOUT_MS);
-
+   it('does not regenerate fresh files on a second run', async () => {
       const options: IDocGenOptions = {
          rootDir:        tempDir,
          fileSpecs:      ['*.ts', '*.tsx'],
