@@ -24,3 +24,9 @@ export const c4ComponentDiagramPromptId  = 'b2e5f8a3-4c9d-5g1f-0e3b-6d7c8f9g2b3c
 
 /** Prompt for generating a C4 Context architecture diagram in Mermaid format. */
 export const c4ContextDiagramPromptId    = 'c3f6g9b4-5d0e-6h2g-1f4c-7e8d9g0h3c4d';
+
+/** Prompt for rolling up subdirectory C4 Component README files into a root summary. */
+export const c4ComponentRollupPromptId   = 'd4a7b0c3-5e6f-7a8b-9c0d-1e2f3a4b5c6d';
+
+/** Prompt for rolling up subdirectory C4 Context README files into a root summary. */
+export const c4ContextRollupPromptId     = 'e5b8c1d4-6f7a-8b9c-0d1e-2f3a4b5c6d7e';

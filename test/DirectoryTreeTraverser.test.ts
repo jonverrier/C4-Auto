@@ -34,6 +34,7 @@ function makeOptions(overrides?: Partial<IDocGenOptions>): IDocGenOptions {
       fileSpecs: ['*.ts'],
       timeWindow: ETimeWindow.kOneWeek,
       c4DiagramTypes: [],
+      rollup: false,
       jobStartedAt: new Date('2025-01-15'),
       ...overrides
    };
@@ -274,6 +275,26 @@ describe('DirectoryTreeTraverser', () => {
          await traverser.traverse(makeOptions());
 
          expect((visitor.visit as sinon.SinonStub).callCount).toBe(0);
+      });
+   });
+
+   describe('finalize hook', () => {
+      it('calls finalize on visitors that implement it after traversal completes', async () => {
+         const subDir = path.join(ROOT, 'child');
+         const tree: Record<string, string[]> = {
+            [ROOT]:    ['root.ts', 'child'],
+            [subDir]:  ['child.ts']
+         };
+         const reader = makeDirectoryReader(tree);
+         const filter = makeFileFilter('.ts');
+         const visitor = makeVisitor(EVisitorPriority.kFirst);
+         const finalizeStub = sinon.stub().resolves();
+         (visitor as IDirectoryVisitor).finalize = finalizeStub;
+         const traverser = new DirectoryTreeTraverser([visitor], reader, filter);
+
+         await traverser.traverse(makeOptions());
+
+         expect(finalizeStub.callCount).toBe(1);
       });
    });
 });

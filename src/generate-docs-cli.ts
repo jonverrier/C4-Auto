@@ -45,6 +45,7 @@ function printUsage(): void {
    console.log('Diagram flags (optional, may be combined):');
    console.log('  --c4component        Generate C4 Component diagrams');
    console.log('  --c4context          Generate C4 Context diagrams');
+   console.log('  --rollup             Roll up subdirectory README.StrongAI.*.md to root');
    console.log('');
    console.log('  --help, -h           Show this help message');
 }
@@ -60,6 +61,7 @@ function parseArgs(): IDocGenOptions {
    const fileSpecs: string[]         = [];
    const timeWindowFlags: ETimeWindow[] = [];
    const c4DiagramTypes: EC4DiagramType[] = [];
+   let rollup = false;
 
    for (let i = 0; i < args.length; i++) {
       const arg = args[i];
@@ -108,6 +110,10 @@ function parseArgs(): IDocGenOptions {
             c4DiagramTypes.push(EC4DiagramType.kContext);
             break;
 
+         case '--rollup':
+            rollup = true;
+            break;
+
          default:
             throw new InvalidParameterError(`Unknown argument: ${arg}`);
       }
@@ -130,11 +136,16 @@ function parseArgs(): IDocGenOptions {
       throw new InvalidParameterError('Only one time-window flag may be specified');
    }
 
+   if (rollup && c4DiagramTypes.length === 0) {
+      throw new InvalidParameterError('--rollup requires at least one of --c4component or --c4context');
+   }
+
    return {
       rootDir,
       fileSpecs,
       timeWindow: timeWindowFlags[0],
       c4DiagramTypes,
+      rollup,
       jobStartedAt: new Date()
    };
 }
@@ -156,6 +167,9 @@ async function main(): Promise<void> {
    console.log(`Time window: ${options.timeWindow}`);
    if (options.c4DiagramTypes.length > 0) {
       console.log(`C4 diagram types: ${options.c4DiagramTypes.join(', ')}`);
+   }
+   if (options.rollup) {
+      console.log('Rollup: enabled');
    }
    console.log('');
 

@@ -28,6 +28,7 @@ import {
 import { IDocGenOptions, IDirectoryVisitor, IFileReader, IFileWriter } from './DocGenTypes';
 import { ModuleHeaderVisitor } from './ModuleHeaderVisitor';
 import { C4DiagramVisitor } from './C4DiagramVisitor';
+import { RollupC4Visitor } from './RollupC4Visitor';
 import typedPrompts from './Prompts.json';
 
 /**
@@ -75,6 +76,19 @@ export class VisitorFactory {
       if (options.c4DiagramTypes.length > 0) {
          visitors.push(
             new C4DiagramVisitor(fileReader, fileWriter, chatDriver, promptRepo, options.c4DiagramTypes)
+         );
+      }
+
+      if (options.rollup && options.c4DiagramTypes.length > 0) {
+         visitors.push(
+            new RollupC4Visitor(
+               fileReader,
+               fileWriter,
+               chatDriver,
+               promptRepo,
+               options.c4DiagramTypes,
+               options.fileSpecs
+            )
          );
       }
 
