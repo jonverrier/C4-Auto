@@ -2,7 +2,9 @@
 
 **Automatically generate C4 architecture docs for your TypeScript codebase.**
 
-C4-Auto is a command-line tool that walks your TypeScript (and TSX) directories, uses an LLM to write module-level summaries, and produces Mermaid C4 diagrams so you can see how your system is structured—without maintaining docs by hand.
+C4-Auto is a standalone CLI package (`@jonverrier/c4-auto`) that walks your TypeScript (and TSX) directories, uses an LLM to write module-level summaries, and produces Mermaid C4 diagrams so you can see how your system is structured—without maintaining docs by hand.
+
+It was originally built for the [Strong AI](https://github.com/jonverrier) fitness-coaching platform; the default generated filenames follow that convention but you can override them for any project.
 
 [Learn more about C4](https://c4model.com/).
 
@@ -25,43 +27,83 @@ C4 is built for “just enough” documentation: enough to onboard people and na
 
 - **Traverses** your project (by default skips `node_modules`, `dist`, `.git`).
 - **Module headers** – For each `.ts`/`.tsx` file it can add or refresh a short LLM-generated comment at the top (with a date so you only regenerate when stale).
-- **C4 diagrams** – For each directory it can write:
-  - **Component** – `README.StrongAI.Component.md` (components and relationships in that folder).
-  - **Context** – `README.StrongAI.Context.md` (how that part of the system fits with users and external systems).
-- **Time windows** – You choose how old a file can be before it’s refreshed (e.g. one week, two weeks, one month), so you don’t re-run the LLM on everything every time.
+- **C4 diagrams** – For each directory it can write generated markdown files (default names below).
+- **Rollup (`--rollup`)** – For nested source trees, synthesizes package-level summaries at the scan root from subdirectory docs plus root-level module headers. Skipped for flat trees. Never modifies your project `README.md`.
+- **Time windows** – You choose how old a file can be before it’s refreshed (one week, two weeks, or one month).
+
+### Default output filenames
+
+C4-Auto uses dedicated generated-doc names so it never overwrites your hand-written `README.md`:
+
+| Diagram type | Default filename |
+|--------------|------------------|
+| Component | `README.StrongAI.Component.md` |
+| Context | `README.StrongAI.Context.md` |
+
+These names come from the Strong AI tooling convention. Override them with `--component-file` and `--context-file` if your project uses different names (e.g. `ARCHITECTURE.Component.md`).
 
 ---
 
-## Quick start
+## Install
 
-**Prerequisites**
+C4-Auto is published to **GitHub Packages** as `@jonverrier/c4-auto` with a `c4-auto` CLI binary.
 
-- Node.js 22
-- [OpenAI API key](https://platform.openai.com/api-keys) (set as `OPENAI_API_KEY`)
-- `@jonverrier/prompt-repository` is installed from GitHub Packages (public); no token needed for `npm install`.
+**Prerequisites:** Node.js 22, `OPENAI_API_KEY` when generating docs, GitHub Packages auth for install.
 
-**Install and run**
+**`.npmrc`** (repo root):
+
+```ini
+@jonverrier:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```
+
+**`package.json`:**
+
+```json
+{
+  "devDependencies": {
+    "@jonverrier/c4-auto": "^0.2.2"
+  },
+  "scripts": {
+    "generate-docs": "c4-auto --dir ./src --files \"*.ts\" \"*.tsx\" --one-month --c4component --c4context --rollup"
+  }
+}
+```
+
+Set `NODE_AUTH_TOKEN` (PAT with `read:packages`) for install.
 
 ```bash
 npm install --save-dev @jonverrier/c4-auto
 ```
 
-Example: generate docs for `./src`, refresh files older than one month, and produce both Component and Context diagrams:
+---
+
+## Quick start
+
+Generate docs for `./src`, refresh files older than one month, and produce both diagram types:
 
 ```bash
 npx c4-auto --dir ./src --files "*.ts" "*.tsx" --one-month --c4component --c4context
 ```
 
-For packages with nested source trees, add `--rollup` to synthesize higher-level `README.StrongAI.*.md` files at the scan root from subdirectory docs:
+For packages with nested source trees, add `--rollup`:
 
 ```bash
 npx c4-auto --dir ./src --files "*.ts" "*.tsx" --one-month --c4component --c4context --rollup
 ```
 
-Or use the npm script and pass options after `--`:
+Use custom output filenames:
 
 ```bash
-npm run generate-docs -- --dir ./src --files "*.ts" "*.tsx" --one-month --c4component --c4context --rollup
+npx c4-auto --dir ./src --files "*.ts" --one-month --c4component \
+  --component-file ARCHITECTURE.Component.md \
+  --context-file ARCHITECTURE.Context.md
+```
+
+Or via npm script (pass extra flags after `--`):
+
+```bash
+npm run generate-docs -- --one-week --c4component
 ```
 
 ---
@@ -70,290 +112,89 @@ npm run generate-docs -- --dir ./src --files "*.ts" "*.tsx" --one-month --c4comp
 
 **Required**
 
-- `--dir <path>` – Root directory to scan (e.g. `./src`).
-- `--files <spec...>` – One or more globs for files to include (e.g. `"*.ts"` `"*.tsx"`).
-- **Exactly one** time-window:
-  - `--one-week` – Regenerate only if older than 1 week.
-  - `--two-weeks` – Older than 2 weeks.
-  - `--one-month` – Older than 1 month.
+| Flag | Description |
+|------|-------------|
+| `--dir <path>` | Root directory to scan (e.g. `./src`) |
+| `--files <spec...>` | One or more globs (e.g. `"*.ts"` `"*.tsx"`) |
+| **Exactly one** time window | `--one-week`, `--two-weeks`, or `--one-month` |
 
 **Optional**
 
-- `--c4component` – Write `README.StrongAI.Component.md` in each directory.
-- `--c4context` – Write `README.StrongAI.Context.md` in each directory.
-- `--rollup` – After traversal, roll up subdirectory `README.StrongAI.*.md` files into root-level summaries (requires `--c4component` and/or `--c4context`). Skipped when only one directory has generated docs.
-- `--help`, `-h` – Print usage.
+| Flag | Description |
+|------|-------------|
+| `--c4component` | Write Component diagram markdown in each directory |
+| `--c4context` | Write Context diagram markdown in each directory |
+| `--rollup` | Synthesize root-level summaries from subdirectory docs (requires `--c4component` and/or `--c4context`) |
+| `--component-file <name>` | Basename for Component output (default: `README.StrongAI.Component.md`) |
+| `--context-file <name>` | Basename for Context output (default: `README.StrongAI.Context.md`) |
+| `--help`, `-h` | Print usage |
 
-**Example**
+Output filename rules: basename only (no paths), must end with `.md`, must not be `README.md`.
 
-```bash
-npx c4-auto --dir ./src --files "*.ts" "*.tsx" --one-week --c4component
-```
+---
+
+## Rollup behaviour
+
+Use `--rollup` when your scan root has **subdirectories** with source (e.g. `src/checks/`, `src/config/`). The tool pre-scans the tree before traversal.
+
+| Tree shape | Per-directory C4 at root | Rollup at root |
+|------------|--------------------------|----------------|
+| Flat (`src/*.ts` only) | Yes | Skipped (nothing to roll up) |
+| Nested (`src/` + subdirs) | **No** — rollup owns root | Yes — package-level summary |
+
+When rollup runs:
+
+1. Subdirectories get normal per-directory generated markdown files.
+2. Root-level `.ts` files still receive module header comments only.
+3. `RollupC4Visitor.finalize()` writes root summaries from subdirectory READMEs and root-level module headers (labelled `(root)` in the prompt).
+4. Only **generated** markdown files are overwritten — never `README.md`.
+5. Rollup uses its own staleness rules (child README or root header date ≥ existing root rollup date).
 
 ---
 
 ## Architecture
 
-The tool is built around a small pipeline:
+Visitor pipeline (ascending priority):
 
-- **generate-docs-cli** – Parses arguments, builds options, and runs the traverser.
-- **VisitorFactory** – Creates the visitors and wires them to real file I/O and the prompt repository.
-- **DirectoryTreeTraverser** – Walks the tree (depth-first), skips excluded dirs, and calls visitors in order.
-- **ModuleHeaderVisitor** – Runs first: adds/updates the LLM-generated header comment in each file (when stale).
-- **C4DiagramVisitor** – Runs second: reads those headers and writes C4 Component and/or Context markdown files.
+1. **ModuleHeaderVisitor** (`kFirst`) – Refreshes stale module header comments in source files.
+2. **C4DiagramVisitor** (`kSecond`) – Writes per-directory diagram markdown from module headers. Skips scan root when `--rollup` and nested sources are detected.
+3. **RollupC4Visitor** (`kThird`, when `--rollup`) – Accumulates subdirectory READMEs during traversal; writes root summaries in `finalize()`.
 
-So: headers are always up to date before any diagram is generated. All of this is documented with C4 diagrams in this repo; see the “Generated documentation” section below.
+Headers are always up to date before diagram generation. Rollup runs after the full tree walk.
 
----
+Generated docs for this repo:
 
-## Generated documentation
-
-This repo is documented with the same tool. You can see the output here:
-
-- [src/README.StrongAI.Component.md](src/README.StrongAI.Component.md) – Component view of the CLI and visitors.
-- [src/README.StrongAI.Context.md](src/README.StrongAI.Context.md) – Context view of the tool and its dependencies.
-
-They were produced by running C4-Auto on `src/` with `--c4component` and `--c4context`.
+- [src/README.StrongAI.Component.md](src/README.StrongAI.Component.md)
+- [src/README.StrongAI.Context.md](src/README.StrongAI.Context.md)
 
 ---
 
-## Building variants
+## Development
 
-This implementation was built **one-shot** from the feature specification below. If you use a **state-of-the-art model** (e.g. Claude, GPT-5.x), you can be fault-confident that giving it the same spec will produce a working build. To build your own variant (different language, different outputs, different LLM provider):
-
-1. **Edit the spec** below to match what you want (e.g. change output filenames, add a Container diagram, target Python instead of TypeScript).
-2. **Paste the full spec** into Claude Code, Cursor, or another AI-assisted coding environment.
-3. Ask the model to implement it. With a SOTA model, a single pass is usually enough.
-
-The entire feature specification follows.
-
----
-
-## Feature specification (Automatic Documentation Generator)
-
-*Below is the full spec this repo was built from. Edit it and paste into an AI coding assistant to generate variants.*
-
----
-
-### Overview
-
-A command-line tool (`generate-docs-cli.ts`) that traverses a directory tree, uses LLM prompts to generate JSDoc-style module-level header comments for TypeScript files, and then produces C4 Architecture diagrams in Mermaid format summarising each directory. The tool is driven entirely by the existing `PromptRepository` / `ChatDriverFactory` API (`@jonverrier/prompt-repository`).
-
-The tool lives in `src/` and is run via an npm script (e.g. `npm run generate-docs`).
-
----
-
-### Component 1 – CLI Entry Point (`generate-docs-cli.ts`)
-
-**Responsibilities:** Parses the command line and wires up the traverser with the correct visitors.
-
-**Arguments:**
-
-| Flag | Type | Description |
-|------|------|-------------|
-| `--dir <path>` | string (required) | Root directory to traverse |
-| `--files <specs...>` | string[] (required) | Glob-style file specs, e.g. `*.ts *.tsx` |
-| `--one-week` | flag | Regenerate only files with headers older than 1 week |
-| `--two-weeks` | flag | Regenerate only files with headers older than 2 weeks |
-| `--one-month` | flag | Regenerate only files with headers older than 1 month |
-| `--c4component` | flag | Generate C4 Component diagrams |
-| `--c4context` | flag | Generate C4 Context diagrams |
-| `--help` / `-h` | flag | Print usage |
-
-Exactly one time-window flag must be provided. Multiple `--c4*` flags may be combined. If no `--c4*` flag is provided, the C4 visitor is not registered.
-
-**Options structure:** All parsed options in a strongly typed `IDocGenOptions`:
-
-```typescript
-export interface IDocGenOptions {
-   rootDir: string;
-   fileSpecs: string[];           // e.g. ['*.ts', '*.tsx']
-   timeWindow: ETimeWindow;
-   c4DiagramTypes: EC4DiagramType[];
-   jobStartedAt: Date;
-}
+```bash
+npm install
+npm run build
+npm run test:ci        # unit + integration (no OPENAI_API_KEY)
+npm run test:e2e       # real LLM (needs OPENAI_API_KEY)
 ```
 
-**Enums:**
-
-```typescript
-export enum ETimeWindow {
-   kOneWeek  = 'kOneWeek',
-   kTwoWeeks = 'kTwoWeeks',
-   kOneMonth = 'kOneMonth'
-}
-
-export enum EC4DiagramType {
-   kComponent = 'kComponent',
-   kContext   = 'kContext'
-}
-
-export enum EVisitorPriority {
-   kFirst  = 1,  // Module header comment visitor
-   kSecond = 2,  // C4 diagram visitor
-   kThird  = 3,
-   kFourth = 4
-}
-```
-
-**Wiring:** CLI creates a `DirectoryTreeTraverser`, registers visitors via a static `VisitorFactory`, then calls `traverser.traverse(options)`. Exit code 0 on success, non-zero on error.
-
 ---
 
-### Component 2 – Directory Tree Traverser (`DirectoryTreeTraverser.ts`)
+## Publishing
 
-**Responsibilities:** Depth-first traversal; for each directory that contains at least one file matching any visitor's file specs, collect matching file paths and dispatch to visitors in priority order.
+Released from this repository to GitHub Packages:
 
-**Interfaces (for DI / mocking):**
+1. Commit on `develop`, merge to `main`.
+2. On `main`: `npm install`, `npm run build`, `npm publish` with `NODE_AUTH_TOKEN`.
+3. Return to `develop`.
 
-```typescript
-export interface IDirectoryReader {
-   listDirectory(dirPath: string): Promise<string[]>;   // returns filenames only
-   isDirectory(itemPath: string): Promise<boolean>;
-}
-
-export interface IFileFilter {
-   matches(filename: string, specs: string[]): boolean;  // glob-style match
-}
-
-export interface IDirectoryVisitor {
-   readonly priority: EVisitorPriority;
-   readonly fileSpecs: string[];   // e.g. ['*.ts', '*.tsx']
-   visit(directoryPath: string, filePaths: string[], options: IDocGenOptions): Promise<void>;
-}
-```
-
-Production implementation uses `fs/promises`. Tests inject mocks.
-
-**Algorithm:**
-
-1. Recursively list `options.rootDir` depth-first.
-2. Skip: `node_modules`, `dist`, `.git`, `.nyc_output`, `coverage`.
-3. For each directory, for each visitor, filter files against `visitor.fileSpecs`.
-4. If one or more matches, call `visitor.visit(directoryPath, matchingFilePaths, options)`.
-5. Visitors sorted ascending by `visitor.priority` before traversal.
-
-**VisitorFactory:** `VisitorFactory.createAll(options)` returns `ModuleHeaderVisitor` always, plus `C4DiagramVisitor` when `options.c4DiagramTypes` is non-empty. Factory constructs chat driver, prompt repo, file reader/writer from production implementations.
-
----
-
-### Component 3 – Module Header Comment Visitor (`ModuleHeaderVisitor.ts`)
-
-**Priority:** `EVisitorPriority.kFirst`  
-**File specs:** `['*.ts', '*.tsx']`
-
-**Responsibilities:** For each TypeScript file, inspect existing header; if StrongAI-generated comment is absent or older than the time window, call the LLM and rewrite the header block.
-
-**Header marker format:**
-
-```
-// ===Start StrongAI Generated Comment (YYYYMMDD)===
-// ...generated content...
-// ===End StrongAI Generated Comment===
-```
-
-Date in opening sentinel used for staleness. Insert above `@module` JSDoc if present, or above first import. Do not remove or relocate copyright line.
-
-**Staleness:** `stale = (jobStartedAt - headerDate) > timeWindowDays(options.timeWindow)` with `kOneWeek → 7`, `kTwoWeeks → 14`, `kOneMonth → 30`.
-
-**Interfaces:** `IFileReader` (`readFile`), `IFileWriter` (`writeFile`). Injected for mocking.
-
-**LLM:** `PromptInMemoryRepository` + `ChatDriverFactory`. Prompt IDs in `PromptIds.ts`; templates in `Prompts.json`. User prompt parameters: `{moduleSource}`, `{wordCount}` (e.g. 150). System prompt: senior TypeScript engineer, concise module documentation. Use `EModel.kLarge`, `EModelProvider.kOpenAI`, `EVerbosity.kMedium`. Response is plain text.
-
----
-
-### Component 4 – C4 Diagram Visitor (`C4DiagramVisitor.ts`)
-
-**Priority:** `EVisitorPriority.kSecond` (after ModuleHeaderVisitor).  
-**File specs:** `['*.ts', '*.tsx']`
-
-**Responsibilities:** Read generated header blocks (or full file if no block) from all TypeScript files in the directory, concatenate, call LLM once per requested diagram type, write output Markdown.
-
-**Output files:**
-
-| Type | Filename |
-|------|----------|
-| `kComponent` | `README.StrongAI.Component.md` |
-| `kContext` | `README.StrongAI.Context.md` |
-
-Each file: (1) overview section, (2) Mermaid diagram in ` ```mermaid ` / ` ``` ` fences, (3) key components section.
-
-**Word-count scaling:**
-
-```
-totalWords  = C4_INTRO_BASE_WORD_COUNT + C4_DETAIL_BASE_WORD_COUNT
-            + floor(sqrt(fileCount) * C4_WORDS_PER_ROOT_FILE)
-introWords  = floor(totalWords * C4_INTRO_FRACTION)
-detailWords = totalWords - introWords
-```
-
-Suggested constants: `C4_INTRO_BASE_WORD_COUNT = 60`, `C4_DETAIL_BASE_WORD_COUNT = 80`, `C4_WORDS_PER_ROOT_FILE = 20`, `C4_INTRO_FRACTION = 0.4`.
-
-**LLM:** Separate prompt IDs for Component and Context. User prompt parameters: `{moduleHeaders}`, `{introWordCount}`, `{detailWordCount}`. Output: overview, valid Mermaid C4 diagram, key-component notes. Same model/verbosity as header visitor.
-
-**Staleness:** Before generating, check if output file exists and has recent datestamp (same time-window logic). Use header comment: `<!-- Generated by StrongAIAutoDoc YYYYMMDD -->`.
-
----
-
-### Prompts (`src/Prompts.json`)
-
-Three prompts (match `IPrompt` from `@jonverrier/prompt-repository`):
-
-- `moduleHeaderCommentPromptId` – module header comment
-- `c4ComponentDiagramPromptId` – C4 Component diagram + prose
-- `c4ContextDiagramPromptId` – C4 Context diagram + prose
-
-Each: `id` (UUID), `version`, `name`, `systemPrompt`, `userPrompt`, `userPromptParameters`.
-
----
-
-### Error handling
-
-Use error classes from the prompt-repository/assistant-common ecosystem: `InvalidParameterError` (bad CLI args), `InvalidOperationError` (parse/LLM failure), `ConnectionError` (API failure). No raw `new Error()`.
-
----
-
-### Testing
-
-- **Unit tests:** Mock all I/O and LLM. Cover traversal order, exclusions, staleness, header extract/strip/rewrite, sentinel parsing, word-count scaling, CLI parsing, error paths.
-- **Integration tests:** Real `Prompts.json`, mocked I/O and LLM. Assert sentinel markers, valid date, README contains overview + Mermaid fence + key components, fresh files skipped.
-- **E2E tests:** Temp dir, real LLM and filesystem. Assert README and header markers present. Skip if `OPENAI_API_KEY` not set. Timeout 5 minutes.
-
----
-
-### Dependencies
-
-- `@jonverrier/prompt-repository` (LLM drivers, prompts)
-- `minimatch` (glob matching for `IFileFilter`)
-- Dev: mocha, expect, sinon, ts-node, tsconfig-paths, typescript, @types/node, @types/mocha, @types/sinon, nyc.
-
----
-
-*End of feature specification.*
-
----
-
-## Testing
-
-- **Unit and integration** (no API key, no network):
-
-  ```bash
-  npm test
-  ```
-
-- **End-to-end** (real OpenAI calls and filesystem; needs `OPENAI_API_KEY`):
-
-  ```bash
-  npm run test:e2e
-  ```
-
-E2E tests are skipped automatically if `OPENAI_API_KEY` is not set.
+GitHub Actions workflow `.github/workflows/publish.yml` also publishes on GitHub Release or manual dispatch.
 
 ---
 
 ## Related
 
-- **[C4-Agent](https://github.com/jonverrier/C4-Agent)** – MCP server that generates C4 docs interactively from your IDE (prompts + tools). C4-Auto is the automated, CLI-only sibling.
+- **[C4-Agent](https://github.com/jonverrier/C4-Agent)** – MCP server for interactive C4 diagram generation from your IDE. C4-Auto is the automated CLI sibling.
 
 ---
 

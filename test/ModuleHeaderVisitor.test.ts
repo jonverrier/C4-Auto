@@ -18,6 +18,7 @@ import {
 } from '../src/DocGenTypes';
 import { IChatDriver, IPromptRepository, IPrompt } from '@jonverrier/prompt-repository';
 import { moduleHeaderCommentPromptId } from '../src/PromptIds';
+import { makeTestDocGenOptions } from './testDocGenOptions';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -40,16 +41,10 @@ function makeSentinelSource(dateStr: string, comment = FAKE_COMMENT): string {
 }
 
 function makeOptions(overrides?: Partial<IDocGenOptions>): IDocGenOptions {
-   return {
-      rootDir: '/root',
-      fileSpecs: ['*.ts'],
+   return makeTestDocGenOptions({
       timeWindow: ETimeWindow.kOneWeek,
-      c4DiagramTypes: [],
-      rollup: false,
-      hasSubdirectorySources: false,
-      jobStartedAt: new Date('2025-01-15'),
       ...overrides
-   };
+   });
 }
 
 function makePromptRepo(): IPromptRepository {

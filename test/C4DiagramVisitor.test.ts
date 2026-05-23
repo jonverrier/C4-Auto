@@ -19,6 +19,7 @@ import {
 } from '../src/DocGenTypes';
 import { IChatDriver, IPromptRepository, IPrompt } from '@jonverrier/prompt-repository';
 import { c4ComponentDiagramPromptId, c4ContextDiagramPromptId } from '../src/PromptIds';
+import { makeTestDocGenOptions } from './testDocGenOptions';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -34,16 +35,11 @@ C4Component
 Key components here.`;
 
 function makeOptions(overrides?: Partial<IDocGenOptions>): IDocGenOptions {
-   return {
-      rootDir: '/root',
-      fileSpecs: ['*.ts'],
+   return makeTestDocGenOptions({
       timeWindow: ETimeWindow.kOneWeek,
       c4DiagramTypes: [EC4DiagramType.kComponent],
-      rollup: false,
-      hasSubdirectorySources: false,
-      jobStartedAt: new Date('2025-01-15'),
       ...overrides
-   };
+   });
 }
 
 function makePromptRepo(): IPromptRepository {
@@ -169,14 +165,28 @@ describe('C4DiagramVisitor', () => {
          const visitor = new C4DiagramVisitor(
             makeFileReader({}), makeFileWriter(), makeChatDriver(), makePromptRepo(), [EC4DiagramType.kComponent]
          );
-         expect(visitor.outputFilename(EC4DiagramType.kComponent)).toBe('README.StrongAI.Component.md');
+         const options = makeOptions();
+         expect(visitor.outputFilename(EC4DiagramType.kComponent, options)).toBe('README.StrongAI.Component.md');
       });
 
       it('returns Context filename for kContext', () => {
          const visitor = new C4DiagramVisitor(
             makeFileReader({}), makeFileWriter(), makeChatDriver(), makePromptRepo(), [EC4DiagramType.kContext]
          );
-         expect(visitor.outputFilename(EC4DiagramType.kContext)).toBe('README.StrongAI.Context.md');
+         const options = makeOptions({ c4DiagramTypes: [EC4DiagramType.kContext] });
+         expect(visitor.outputFilename(EC4DiagramType.kContext, options)).toBe('README.StrongAI.Context.md');
+      });
+
+      it('returns custom filenames from options', () => {
+         const visitor = new C4DiagramVisitor(
+            makeFileReader({}), makeFileWriter(), makeChatDriver(), makePromptRepo(), [EC4DiagramType.kComponent]
+         );
+         const options = makeOptions({
+            componentOutputFile: 'ARCH.Component.md',
+            contextOutputFile: 'ARCH.Context.md'
+         });
+         expect(visitor.outputFilename(EC4DiagramType.kComponent, options)).toBe('ARCH.Component.md');
+         expect(visitor.outputFilename(EC4DiagramType.kContext, options)).toBe('ARCH.Context.md');
       });
    });
 

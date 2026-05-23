@@ -57,6 +57,8 @@ export enum EVisitorPriority {
  * @property c4DiagramTypes - Which C4 diagram types to generate (empty = none)
  * @property rollup - When true, synthesize root-level README files from subdirectory docs
  * @property hasSubdirectorySources - True when matching source files exist below rootDir
+ * @property componentOutputFile - Basename for generated Component markdown (default Strong AI convention)
+ * @property contextOutputFile - Basename for generated Context markdown (default Strong AI convention)
  * @property jobStartedAt - Timestamp when the job was started, used for staleness checks
  */
 export interface IDocGenOptions {
@@ -66,6 +68,8 @@ export interface IDocGenOptions {
    c4DiagramTypes: EC4DiagramType[];
    rollup: boolean;
    hasSubdirectorySources: boolean;
+   componentOutputFile: string;
+   contextOutputFile: string;
    jobStartedAt: Date;
 }
 
