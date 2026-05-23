@@ -83,6 +83,14 @@ export class C4DiagramVisitor implements IDirectoryVisitor {
    ) {}
 
    async visit(directoryPath: string, filePaths: string[], options: IDocGenOptions): Promise<void> {
+      if (options.rollup && options.hasSubdirectorySources) {
+         const normalizedRoot = path.resolve(options.rootDir);
+         const normalizedDir  = path.resolve(directoryPath);
+         if (normalizedDir === normalizedRoot) {
+            return;
+         }
+      }
+
       // Collect the header blocks (or full source) for all files in this directory.
       const moduleHeaders = await this.collectHeaders(filePaths);
       const { introWords, detailWords } = this.computeWordCounts(filePaths.length);

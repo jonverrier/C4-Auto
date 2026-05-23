@@ -56,6 +56,7 @@ export enum EVisitorPriority {
  * @property timeWindow - Staleness window: regenerate files older than this
  * @property c4DiagramTypes - Which C4 diagram types to generate (empty = none)
  * @property rollup - When true, synthesize root-level README files from subdirectory docs
+ * @property hasSubdirectorySources - True when matching source files exist below rootDir
  * @property jobStartedAt - Timestamp when the job was started, used for staleness checks
  */
 export interface IDocGenOptions {
@@ -64,6 +65,7 @@ export interface IDocGenOptions {
    timeWindow: ETimeWindow;
    c4DiagramTypes: EC4DiagramType[];
    rollup: boolean;
+   hasSubdirectorySources: boolean;
    jobStartedAt: Date;
 }
 

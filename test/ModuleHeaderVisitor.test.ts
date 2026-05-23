@@ -46,6 +46,7 @@ function makeOptions(overrides?: Partial<IDocGenOptions>): IDocGenOptions {
       timeWindow: ETimeWindow.kOneWeek,
       c4DiagramTypes: [],
       rollup: false,
+      hasSubdirectorySources: false,
       jobStartedAt: new Date('2025-01-15'),
       ...overrides
    };
