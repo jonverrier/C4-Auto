@@ -41,6 +41,11 @@ function printUsage(): void {
    console.log('  --c4context          Generate C4 Context diagrams');
    console.log('  --rollup             Roll up subdirectory generated docs to scan root');
    console.log('');
+   console.log('Safety flags (optional):');
+   console.log('  --dry-run            Log files that would change; no LLM calls or writes');
+   console.log('  --skip-headers       Skip module header updates (diagrams-only; requires a diagram flag)');
+   console.log('  --diagrams-only      Alias for --skip-headers');
+   console.log('');
    console.log('Output filenames (optional):');
    console.log(`  --component-file <name>  Component doc basename (default: ${DEFAULT_C4_OUTPUT_FILES.kComponent})`);
    console.log(`  --context-file <name>    Context doc basename (default: ${DEFAULT_C4_OUTPUT_FILES.kContext})`);
@@ -59,6 +64,8 @@ export function parseArgs(args: string[] = process.argv.slice(2)): IDocGenOption
    const timeWindowFlags: ETimeWindow[] = [];
    const c4DiagramTypes: EC4DiagramType[] = [];
    let rollup = false;
+   let dryRun = false;
+   let skipHeaders = false;
    let componentOutputFile = DEFAULT_C4_OUTPUT_FILES[EC4DiagramType.kComponent];
    let contextOutputFile   = DEFAULT_C4_OUTPUT_FILES[EC4DiagramType.kContext];
 
@@ -112,6 +119,15 @@ export function parseArgs(args: string[] = process.argv.slice(2)): IDocGenOption
             rollup = true;
             break;
 
+         case '--dry-run':
+            dryRun = true;
+            break;
+
+         case '--skip-headers':
+         case '--diagrams-only':
+            skipHeaders = true;
+            break;
+
          case '--component-file':
             if (i + 1 >= args.length) {
                throw new InvalidParameterError('--component-file requires a filename argument');
@@ -151,6 +167,10 @@ export function parseArgs(args: string[] = process.argv.slice(2)): IDocGenOption
       throw new InvalidParameterError('--rollup requires at least one of --c4component or --c4context');
    }
 
+   if (skipHeaders && c4DiagramTypes.length === 0) {
+      throw new InvalidParameterError('--skip-headers requires at least one of --c4component or --c4context');
+   }
+
    validateC4OutputFilename(componentOutputFile, '--component-file');
    validateC4OutputFilename(contextOutputFile, '--context-file');
 
@@ -163,7 +183,9 @@ export function parseArgs(args: string[] = process.argv.slice(2)): IDocGenOption
       hasSubdirectorySources: false,
       componentOutputFile,
       contextOutputFile,
-      jobStartedAt: new Date()
+      jobStartedAt: new Date(),
+      dryRun,
+      skipHeaders
    };
 }
 
@@ -204,6 +226,12 @@ async function main(): Promise<void> {
       if (options.hasSubdirectorySources) {
          console.log('Rollup: root per-directory C4 skipped (nested sources detected)');
       }
+   }
+   if (options.skipHeaders) {
+      console.log('Module headers: skipped (--skip-headers)');
+   }
+   if (options.dryRun) {
+      console.log('Dry run: no files will be written');
    }
    console.log('');
 

@@ -69,9 +69,11 @@ export class VisitorFactory {
       const promptRepo = new PromptInMemoryRepository(typedPrompts as IPrompt[]);
       const chatDriver = new ChatDriverFactory().create(EModel.kLarge, EModelProvider.kOpenAI);
 
-      const visitors: IDirectoryVisitor[] = [
-         new ModuleHeaderVisitor(fileReader, fileWriter, chatDriver, promptRepo)
-      ];
+      const visitors: IDirectoryVisitor[] = [];
+
+      if (!options.skipHeaders) {
+         visitors.push(new ModuleHeaderVisitor(fileReader, fileWriter, chatDriver, promptRepo));
+      }
 
       if (options.c4DiagramTypes.length > 0) {
          visitors.push(

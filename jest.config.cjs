@@ -19,11 +19,13 @@ module.exports = {
          roots: ['<rootDir>/test'],
          testMatch: [
             '**/DirectoryTreeTraverser.test.ts',
+            '**/ModuleHeaderExtract.test.ts',
             '**/ModuleHeaderVisitor.test.ts',
             '**/C4DiagramVisitor.test.ts',
             '**/RollupC4Visitor.test.ts',
             '**/C4ReadmeUtils.test.ts',
-            '**/generate-docs-cli.test.ts'
+            '**/generate-docs-cli.test.ts',
+            '**/VisitorFactory.test.ts'
          ],
          transform: tsJestTransform,
          collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts'],
@@ -36,11 +38,13 @@ module.exports = {
          roots: ['<rootDir>/test'],
          testMatch: [
             '**/DirectoryTreeTraverser.test.ts',
+            '**/ModuleHeaderExtract.test.ts',
             '**/ModuleHeaderVisitor.test.ts',
             '**/C4DiagramVisitor.test.ts',
             '**/RollupC4Visitor.test.ts',
             '**/C4ReadmeUtils.test.ts',
             '**/generate-docs-cli.test.ts',
+            '**/VisitorFactory.test.ts',
             '**/DocumentationGenerator.integration.test.ts'
          ],
          transform: tsJestTransform,

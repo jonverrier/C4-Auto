@@ -60,6 +60,8 @@ export enum EVisitorPriority {
  * @property componentOutputFile - Basename for generated Component markdown (default Strong AI convention)
  * @property contextOutputFile - Basename for generated Context markdown (default Strong AI convention)
  * @property jobStartedAt - Timestamp when the job was started, used for staleness checks
+ * @property dryRun - When true, log planned updates without LLM calls or file writes
+ * @property skipHeaders - When true, omit ModuleHeaderVisitor (diagrams-only mode)
  */
 export interface IDocGenOptions {
    rootDir: string;
@@ -71,7 +73,12 @@ export interface IDocGenOptions {
    componentOutputFile: string;
    contextOutputFile: string;
    jobStartedAt: Date;
+   dryRun: boolean;
+   skipHeaders: boolean;
 }
+
+/** Prefix for dry-run log lines written to stdout. */
+export const DRY_RUN_LOG_PREFIX = 'c4-auto: dry-run:';
 
 /**
  * Abstraction over the filesystem directory listing, enabling test mocking.

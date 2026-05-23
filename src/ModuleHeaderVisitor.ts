@@ -23,6 +23,7 @@ import {
 
 import {
    EVisitorPriority,
+   DRY_RUN_LOG_PREFIX,
    IDocGenOptions,
    IFileReader,
    IFileWriter,
@@ -142,6 +143,11 @@ export class ModuleHeaderVisitor implements IDirectoryVisitor {
 
       if (!this.isStale(headerDate, options)) {
          // Header is present and fresh — skip
+         return;
+      }
+
+      if (options.dryRun) {
+         console.log(`${DRY_RUN_LOG_PREFIX} would update module header: ${filePath}`);
          return;
       }
 

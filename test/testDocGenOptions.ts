@@ -23,6 +23,8 @@ export function makeTestDocGenOptions(overrides?: Partial<IDocGenOptions>): IDoc
       componentOutputFile: DEFAULT_C4_OUTPUT_FILES[EC4DiagramType.kComponent],
       contextOutputFile: DEFAULT_C4_OUTPUT_FILES[EC4DiagramType.kContext],
       jobStartedAt: new Date('2025-01-15'),
+      dryRun: false,
+      skipHeaders: false,
       ...overrides
    };
 }
