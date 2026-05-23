@@ -275,6 +275,18 @@ export class AzureOpenAIChatDriver {}
          expect((writer.writeFile as sinon.SinonStub).callCount).toBe(0);
       });
 
+      it('does not call LLM or write when dryRun is enabled', async () => {
+         const writer  = makeFileWriter();
+         const driver  = makeChatDriver();
+         const staleSource = makeSentinelSource('20250101');
+         const visitor = new ModuleHeaderVisitor(makeFileReader(staleSource), writer, driver, makePromptRepo());
+
+         await visitor.visit('/root', ['/root/MyModule.ts'], makeOptions({ dryRun: true }));
+
+         expect((driver.getModelResponse as sinon.SinonStub).callCount).toBe(0);
+         expect((writer.writeFile as sinon.SinonStub).callCount).toBe(0);
+      });
+
       it('regenerates a stale header', async () => {
          const writer  = makeFileWriter();
          const driver  = makeChatDriver('New generated comment');

@@ -16,6 +16,7 @@ import {
 import {
    EC4DiagramType,
    EVisitorPriority,
+   DRY_RUN_LOG_PREFIX,
    IDocGenOptions,
    IDirectoryVisitor,
    IFileReader,
@@ -185,6 +186,11 @@ export class RollupC4Visitor implements IDirectoryVisitor {
 
       const childContents = entries.map(entry => entry.content);
       if (!isRollupOutputStale(existingContent, childContents, rootModuleHeaderDates, options)) {
+         return;
+      }
+
+      if (options.dryRun) {
+         console.log(`${DRY_RUN_LOG_PREFIX} would write rollup ${outputPath}`);
          return;
       }
 

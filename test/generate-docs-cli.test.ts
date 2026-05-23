@@ -92,4 +92,39 @@ describe('generate-docs-cli.parseArgs', () => {
          '--one-week', '--two-weeks'
       ])).toThrow(InvalidParameterError);
    });
+
+   it('parses --dry-run and --skip-headers', () => {
+      const options = parseArgs([
+         '--dir', './src',
+         '--files', '*.ts',
+         '--one-week',
+         '--c4component',
+         '--dry-run',
+         '--skip-headers'
+      ]);
+
+      expect(options.dryRun).toBe(true);
+      expect(options.skipHeaders).toBe(true);
+   });
+
+   it('parses --diagrams-only as an alias for --skip-headers', () => {
+      const options = parseArgs([
+         '--dir', './src',
+         '--files', '*.ts',
+         '--one-month',
+         '--c4context',
+         '--diagrams-only'
+      ]);
+
+      expect(options.skipHeaders).toBe(true);
+   });
+
+   it('rejects --skip-headers without diagram flags', () => {
+      expect(() => parseArgs([
+         '--dir', './src',
+         '--files', '*.ts',
+         '--one-week',
+         '--skip-headers'
+      ])).toThrow(InvalidParameterError);
+   });
 });

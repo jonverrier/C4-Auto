@@ -226,6 +226,24 @@ describe('DocumentationGenerator integration', () => {
          expect((driver.getModelResponse as sinon.SinonStub).callCount).toBe(0);
          expect((writer.writeFile as sinon.SinonStub).callCount).toBe(0);
       });
+
+      it('does not call LLM or write files when dryRun is enabled', async () => {
+         const promptRepo = new PromptInMemoryRepository(typedPrompts as IPrompt[]);
+         const writer     = makeFileWriter();
+         const driver     = makeChatDriver();
+         const visitor    = new ModuleHeaderVisitor(
+            makeSyntheticFileReader(), writer, driver, promptRepo
+         );
+
+         await visitor.visit(
+            FAKE_ROOT,
+            Object.keys(SYNTHETIC_FILES),
+            makeOptions({ dryRun: true })
+         );
+
+         expect((driver.getModelResponse as sinon.SinonStub).callCount).toBe(0);
+         expect((writer.writeFile as sinon.SinonStub).callCount).toBe(0);
+      });
    });
 
    // -------------------------------------------------------------------------
@@ -260,6 +278,24 @@ describe('DocumentationGenerator integration', () => {
          const content = (writer.writeFile as sinon.SinonStub).firstCall.args[1] as string;
          expect(content).toContain('Overview section here.');
          expect(content).toContain('Key components:');
+      });
+
+      it('does not call LLM or write files when dryRun is enabled', async () => {
+         const promptRepo = new PromptInMemoryRepository(typedPrompts as IPrompt[]);
+         const writer     = makeFileWriter();
+         const driver     = { getModelResponse: sinon.stub().resolves(FAKE_DIAGRAM) } as unknown as IChatDriver;
+         const visitor    = new C4DiagramVisitor(
+            makeSyntheticFileReader(), writer, driver, promptRepo, [EC4DiagramType.kComponent]
+         );
+
+         await visitor.visit(
+            FAKE_ROOT,
+            Object.keys(SYNTHETIC_FILES),
+            makeOptions({ dryRun: true })
+         );
+
+         expect((driver.getModelResponse as sinon.SinonStub).callCount).toBe(0);
+         expect((writer.writeFile as sinon.SinonStub).callCount).toBe(0);
       });
    });
 

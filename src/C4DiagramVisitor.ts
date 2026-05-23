@@ -30,6 +30,7 @@ import {
 import {
    EC4DiagramType,
    EVisitorPriority,
+   DRY_RUN_LOG_PREFIX,
    IDocGenOptions,
    IFileReader,
    IFileWriter,
@@ -144,6 +145,11 @@ export class C4DiagramVisitor implements IDirectoryVisitor {
 
       if (!isReadmeOutputStale(existingContent, options)) {
          return; // Fresh — skip generation.
+      }
+
+      if (options.dryRun) {
+         console.log(`${DRY_RUN_LOG_PREFIX} would write ${outputPath}`);
+         return;
       }
 
       // Look up the prompt.
