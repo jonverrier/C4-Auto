@@ -22,7 +22,6 @@ import {
 } from '@jonverrier/prompt-repository';
 
 import {
-   ETimeWindow,
    EVisitorPriority,
    IDocGenOptions,
    IFileReader,
@@ -30,68 +29,26 @@ import {
    IDirectoryVisitor
 } from './DocGenTypes';
 
+import { isArtifactDateStale } from './C4ReadmeUtils';
+import {
+   buildModuleHeaderBlock,
+   extractModuleHeaderDate,
+   stripModuleHeaderBlocks
+} from './ModuleHeaderExtract';
 import { moduleHeaderCommentPromptId } from './PromptIds';
 
 // Target word count for the LLM-generated comment block.
 const MODULE_COMMENT_WORD_COUNT = 150;
 
-// Number of milliseconds per day.
-const MS_PER_DAY = 86400000;
-
-// Time-window durations in days.
-const TIME_WINDOW_DAYS: Record<ETimeWindow, number> = {
-   [ETimeWindow.kOneWeek]:  7,
-   [ETimeWindow.kTwoWeeks]: 14,
-   [ETimeWindow.kOneMonth]: 30
-};
-
-// Sentinel markers embedded in generated header blocks.
-const SENTINEL_OPEN_PREFIX  = '// ===Start StrongAI Generated Comment (';
-const SENTINEL_OPEN_SUFFIX  = ')===';
-const SENTINEL_CLOSE        = '// ===End StrongAI Generated Comment===';
-
-// Regex to find and capture the YYYYMMDD date from an existing sentinel opening.
-// Uses ^ for extractHeaderDate (prefer line-start matches). Strip uses SENTINEL_OPEN_FLEXIBLE_RE.
-const SENTINEL_OPEN_RE = /^\/\/ ===Start StrongAI Generated Comment \((\d{8})\)===/m;
-// Finds sentinel anywhere (handles merged case: */// ===Start...).
-const SENTINEL_OPEN_FLEXIBLE_RE = /\/\/ ===Start StrongAI Generated Comment \((\d{8})\)===/;
-
 // Regex to find the first JSDoc block containing @module (from /** to */).
 const MODULE_BLOCK_RE = /\/\*\*[\s\S]*?@module[\s\S]*?\*\//;
 
 // Regex for copyright: block comment (/* ... Copyright ... */) or single-line (// ... Copyright ...).
-// Block form must not span across */ — use (?:(?!\*\/)[\s\S])*? so we match only within a single block.
 const COPYRIGHT_BLOCK_RE = /\/\*(?:(?!\*\/)[\s\S])*?Copyright[\s\S]*?\*\//i;
 const COPYRIGHT_LINE_RE  = /\/\/[^\n]*Copyright[^\n]*/im;
 
 // Only search for delimiters in the preamble (avoids matching copyright/@module in later JSDoc).
 const PREAMBLE_LINE_LIMIT = 25;
-
-/**
- * Formats a Date as a compact YYYYMMDD string for embedding in sentinel markers.
- */
-function formatDateYYYYMMDD(date: Date): string {
-   const y = date.getFullYear();
-   const m = String(date.getMonth() + 1).padStart(2, '0');
-   const d = String(date.getDate()).padStart(2, '0');
-   return `${y}${m}${d}`;
-}
-
-/**
- * Parses a YYYYMMDD string into a Date, returning null if the string is malformed.
- */
-function parseDateYYYYMMDD(s: string): Date | null {
-   if (!/^\d{8}$/.test(s)) return null;
-   const year  = parseInt(s.substring(0, 4), 10);
-   const month = parseInt(s.substring(4, 6), 10) - 1;
-   const day   = parseInt(s.substring(6, 8), 10);
-   const d = new Date(year, month, day);
-   // Validate the date is real (e.g. month 13 would roll over)
-   if (d.getFullYear() !== year || d.getMonth() !== month || d.getDate() !== day) {
-      return null;
-   }
-   return d;
-}
 
 /**
  * Returns the index immediately after the given match (including its trailing newline).
@@ -222,68 +179,28 @@ export class ModuleHeaderVisitor implements IDirectoryVisitor {
     * @param options - Job options containing jobStartedAt and timeWindow
     */
    isStale(headerDate: Date | null, options: IDocGenOptions): boolean {
-      if (headerDate === null) return true;
-      const ageMs = options.jobStartedAt.getTime() - headerDate.getTime();
-      const thresholdMs = TIME_WINDOW_DAYS[options.timeWindow] * MS_PER_DAY;
-      return ageMs > thresholdMs;
+      return isArtifactDateStale(headerDate, options);
    }
 
    /**
     * Extracts the embedded date from the StrongAI sentinel opening.
     * Returns null if no sentinel is present or the date is malformed.
-    * Checks line-start first, then flexible (handles merged sentinels).
     */
    extractHeaderDate(source: string): Date | null {
-      let match = SENTINEL_OPEN_RE.exec(source);
-      if (!match) match = SENTINEL_OPEN_FLEXIBLE_RE.exec(source);
-      if (!match) return null;
-      return parseDateYYYYMMDD(match[1]);
+      return extractModuleHeaderDate(source);
    }
 
    /**
     * Removes all StrongAI generated header blocks from source.
-    * Handles merged sentinels by also removing the preceding JSDoc close when needed.
-    * Loops to remove duplicate blocks.
     */
    stripGeneratedHeader(source: string): string {
-      let result = source;
-      const re = new RegExp(SENTINEL_OPEN_FLEXIBLE_RE.source, 'g');
-      let openMatch: RegExpExecArray | null;
-      while ((openMatch = re.exec(result)) !== null) {
-         const sentinelStart = openMatch.index;
-         const closeIndex = result.indexOf(SENTINEL_CLOSE, sentinelStart);
-         if (closeIndex === -1) break;
-
-         const afterClose = result.indexOf('\n', closeIndex + SENTINEL_CLOSE.length);
-         const endIndex = afterClose === -1 ? result.length : afterClose + 1;
-
-         // If sentinel is merged with JSDoc (e.g. */// ===Start...), remove from */ to fix the JSDoc
-         const lineStart = result.lastIndexOf('\n', sentinelStart - 1) + 1;
-         const lineBeforeSentinel = result.substring(lineStart, sentinelStart);
-         const mergedMatch = /(\*\/)\s*$/.exec(lineBeforeSentinel);
-         const removeFrom = mergedMatch ? lineStart + mergedMatch.index : sentinelStart;
-
-         result = result.substring(0, removeFrom) + result.substring(endIndex);
-         re.lastIndex = 0; // Reset to find next block in modified string
-      }
-      return result;
+      return stripModuleHeaderBlocks(source);
    }
 
    /**
-    * Wraps the LLM-generated plain-text comment in sentinel markers, with each
-    * line prefixed by `// `.
+    * Wraps the LLM-generated plain-text comment in sentinel markers.
     */
    buildNewHeader(generatedComment: string, jobStartedAt: Date): string {
-      const dateStr   = formatDateYYYYMMDD(jobStartedAt);
-      const openLine  = `${SENTINEL_OPEN_PREFIX}${dateStr}${SENTINEL_OPEN_SUFFIX}`;
-      const closeLine = SENTINEL_CLOSE;
-
-      // Prefix every line of the generated comment with `// `
-      const commentLines = generatedComment
-         .split('\n')
-         .map(line => `// ${line}`)
-         .join('\n');
-
-      return `${openLine}\n${commentLines}\n${closeLine}\n\n`;
+      return buildModuleHeaderBlock(generatedComment, jobStartedAt);
    }
 }

@@ -42,16 +42,13 @@ import {
    buildReadmeDatestamp,
    isReadmeOutputStale
 } from './C4ReadmeUtils';
+import { extractModuleHeaderBlock } from './ModuleHeaderExtract';
 
 // Word-count scaling constants for section lengths.
 const C4_INTRO_BASE_WORD_COUNT  = 60;
 const C4_DETAIL_BASE_WORD_COUNT = 80;
 const C4_WORDS_PER_ROOT_FILE    = 20;
 const C4_INTRO_FRACTION         = 0.4;  // 40% intro, 60% detail
-
-// Sentinel used to extract the header block written by ModuleHeaderVisitor.
-const SENTINEL_OPEN_RE  = /\/\/ ===Start StrongAI Generated Comment \(\d{8}\)===/;
-const SENTINEL_CLOSE    = '// ===End StrongAI Generated Comment===';
 
 // Maps EC4DiagramType to its prompt ID.
 const C4_PROMPT_IDS: Record<EC4DiagramType, string> = {
@@ -116,7 +113,7 @@ export class C4DiagramVisitor implements IDirectoryVisitor {
       const parts: string[] = [];
       for (const filePath of filePaths) {
          const source = await this.fileReader.readFile(filePath);
-         const header = this.extractHeaderBlock(source);
+         const header = extractModuleHeaderBlock(source);
          const label  = path.basename(filePath);
          parts.push(`### ${label}\n${header}`);
       }
@@ -177,14 +174,7 @@ export class C4DiagramVisitor implements IDirectoryVisitor {
     * Falls back to the full source if no sentinel block is present.
     */
    extractHeaderBlock(source: string): string {
-      const openMatch = SENTINEL_OPEN_RE.exec(source);
-      if (!openMatch) return source;
-
-      const openIndex  = source.indexOf(openMatch[0]);
-      const closeIndex = source.indexOf(SENTINEL_CLOSE, openIndex);
-      if (closeIndex === -1) return source;
-
-      return source.substring(openIndex, closeIndex + SENTINEL_CLOSE.length);
+      return extractModuleHeaderBlock(source);
    }
 
    /**
