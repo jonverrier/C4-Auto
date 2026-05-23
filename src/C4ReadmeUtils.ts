@@ -105,6 +105,19 @@ export function parseDateYYYYMMDD(s: string): Date | null {
 }
 
 /**
+ * Returns true when an artifact date is absent or older than the configured time window.
+ * @param artifactDate - Parsed generation date, or null when absent or malformed
+ * @param options - Doc-gen options including jobStartedAt and timeWindow
+ * @returns True when regeneration is required
+ */
+export function isArtifactDateStale(artifactDate: Date | null, options: IDocGenOptions): boolean {
+   if (artifactDate === null) return true;
+   const ageMs       = options.jobStartedAt.getTime() - artifactDate.getTime();
+   const thresholdMs = TIME_WINDOW_DAYS[options.timeWindow] * MS_PER_DAY;
+   return ageMs > thresholdMs;
+}
+
+/**
  * Returns true if generated README content is absent or older than the configured time window.
  * @param existingContent - Current file content, if any
  * @param options - Doc-gen options including jobStartedAt and timeWindow
@@ -112,13 +125,7 @@ export function parseDateYYYYMMDD(s: string): Date | null {
  */
 export function isReadmeOutputStale(existingContent: string | null, options: IDocGenOptions): boolean {
    if (!existingContent) return true;
-   const match = README_DATESTAMP_RE.exec(existingContent);
-   if (!match) return true;
-   const headerDate = parseDateYYYYMMDD(match[1]);
-   if (!headerDate) return true;
-   const ageMs       = options.jobStartedAt.getTime() - headerDate.getTime();
-   const thresholdMs = TIME_WINDOW_DAYS[options.timeWindow] * MS_PER_DAY;
-   return ageMs > thresholdMs;
+   return isArtifactDateStale(extractReadmeGeneratedDate(existingContent), options);
 }
 
 /**
