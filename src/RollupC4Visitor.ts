@@ -22,7 +22,7 @@ import {
    IFileWriter
 } from './DocGenTypes';
 import {
-   C4_OUTPUT_FILES,
+   getC4OutputFilename,
    buildReadmeDatestamp,
    isRollupOutputStale
 } from './C4ReadmeUtils';
@@ -92,7 +92,7 @@ export class RollupC4Visitor implements IDirectoryVisitor {
 
       const relativeDir = path.relative(normalizedRoot, normalizedDir);
       for (const diagramType of this.diagramTypes) {
-         const readmePath = path.join(directoryPath, C4_OUTPUT_FILES[diagramType]);
+         const readmePath = path.join(directoryPath, getC4OutputFilename(options, diagramType));
          let content: string | null = null;
          try {
             content = await this.fileReader.readFile(readmePath);
@@ -175,7 +175,7 @@ export class RollupC4Visitor implements IDirectoryVisitor {
          return;
       }
 
-      const outputPath = path.join(rootDir, C4_OUTPUT_FILES[diagramType]);
+      const outputPath = path.join(rootDir, getC4OutputFilename(options, diagramType));
       let existingContent: string | null = null;
       try {
          existingContent = await this.fileReader.readFile(outputPath);

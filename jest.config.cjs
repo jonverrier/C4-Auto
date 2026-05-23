@@ -22,7 +22,8 @@ module.exports = {
             '**/ModuleHeaderVisitor.test.ts',
             '**/C4DiagramVisitor.test.ts',
             '**/RollupC4Visitor.test.ts',
-            '**/C4ReadmeUtils.test.ts'
+            '**/C4ReadmeUtils.test.ts',
+            '**/generate-docs-cli.test.ts'
          ],
          transform: tsJestTransform,
          collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts'],
@@ -39,6 +40,7 @@ module.exports = {
             '**/C4DiagramVisitor.test.ts',
             '**/RollupC4Visitor.test.ts',
             '**/C4ReadmeUtils.test.ts',
+            '**/generate-docs-cli.test.ts',
             '**/DocumentationGenerator.integration.test.ts'
          ],
          transform: tsJestTransform,

@@ -38,7 +38,7 @@ import {
 
 import { c4ComponentDiagramPromptId, c4ContextDiagramPromptId } from './PromptIds';
 import {
-   C4_OUTPUT_FILES,
+   getC4OutputFilename,
    buildReadmeDatestamp,
    isReadmeOutputStale
 } from './C4ReadmeUtils';
@@ -134,7 +134,7 @@ export class C4DiagramVisitor implements IDirectoryVisitor {
       detailWords: number,
       options: IDocGenOptions
    ): Promise<void> {
-      const outputFilename = C4_OUTPUT_FILES[diagramType];
+      const outputFilename = getC4OutputFilename(options, diagramType);
       const outputPath     = path.join(directoryPath, outputFilename);
 
       // Check if the existing output file is still fresh.
@@ -202,8 +202,8 @@ export class C4DiagramVisitor implements IDirectoryVisitor {
    /**
     * Returns the output filename for a given C4 diagram type.
     */
-   outputFilename(type: EC4DiagramType): string {
-      return C4_OUTPUT_FILES[type];
+   outputFilename(type: EC4DiagramType, options: IDocGenOptions): string {
+      return getC4OutputFilename(options, type);
    }
 
    /**

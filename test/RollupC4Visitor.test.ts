@@ -18,6 +18,7 @@ import {
 } from '../src/DocGenTypes';
 import { IChatDriver, IPromptRepository, IPrompt } from '@jonverrier/prompt-repository';
 import { c4ComponentRollupPromptId } from '../src/PromptIds';
+import { makeTestDocGenOptions } from './testDocGenOptions';
 
 const FAKE_ROLLUP = `Package overview.
 
@@ -33,16 +34,14 @@ const ROOT_HEADER = `// ===Start StrongAI Generated Comment (20250110)===
 // ===End StrongAI Generated Comment===`;
 
 function makeOptions(overrides?: Partial<IDocGenOptions>): IDocGenOptions {
-   return {
+   return makeTestDocGenOptions({
       rootDir: path.resolve('/project/src'),
-      fileSpecs: ['*.ts'],
       timeWindow: ETimeWindow.kOneWeek,
       c4DiagramTypes: [EC4DiagramType.kComponent],
       rollup: true,
       hasSubdirectorySources: true,
-      jobStartedAt: new Date('2025-01-15'),
       ...overrides
-   };
+   });
 }
 
 function makePromptRepo(): IPromptRepository {

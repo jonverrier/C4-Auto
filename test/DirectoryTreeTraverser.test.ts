@@ -20,6 +20,7 @@ import {
    EC4DiagramType,
    EVisitorPriority
 } from '../src/DocGenTypes';
+import { makeTestDocGenOptions } from './testDocGenOptions';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -29,16 +30,11 @@ import {
 const ROOT = path.resolve('testroot');
 
 function makeOptions(overrides?: Partial<IDocGenOptions>): IDocGenOptions {
-   return {
+   return makeTestDocGenOptions({
       rootDir: ROOT,
-      fileSpecs: ['*.ts'],
       timeWindow: ETimeWindow.kOneWeek,
-      c4DiagramTypes: [],
-      rollup: false,
-      hasSubdirectorySources: false,
-      jobStartedAt: new Date('2025-01-15'),
       ...overrides
-   };
+   });
 }
 
 /** Returns a stub IDirectoryVisitor with controllable priority and fileSpecs. */

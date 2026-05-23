@@ -1,26 +1,11 @@
 #!/usr/bin/env node
 /**
  * @module generate-docs-cli
- * Command-line entry point for the StrongAI automatic documentation generator.
+ * Command-line entry point for the C4-Auto documentation generator.
  * Parses arguments, constructs IDocGenOptions, wires visitors via VisitorFactory,
  * and runs the DirectoryTreeTraverser.
- *
- * Usage:
- *   ts-node src/generate-docs-cli.ts --dir <path> --files <spec...>
- *       --one-week | --two-weeks | --one-month
- *       [--c4component] [--c4context]
- *
- * Examples:
- *   ts-node src/generate-docs-cli.ts --dir ../Assistant/src --files "*.ts" --one-week --c4component
- *   ts-node src/generate-docs-cli.ts --dir ../AssistantIngest/src --files "*.ts" "*.tsx" --one-month --c4component --c4context
  */
 // Copyright (c) 2025, 2026 Jon Verrier
-
-// ===Start StrongAI Generated Comment (20260219)===
-// Command-line entry point for the StrongAI automatic documentation generator. It parses CLI flags into a validated IDocGenOptions object, builds visitors via VisitorFactory, and walks a directory tree to generate or refresh docs based on a selected time window.
-//
-// There are no public exports; this module is an executable script. Internally it defines printUsage, parseArgs, and main. Key imports: InvalidParameterError, ETimeWindow, EC4DiagramType, IDocGenOptions, VisitorFactory, DirectoryTreeTraverser, NodeDirectoryReader, MinimatchFileFilter.
-// ===End StrongAI Generated Comment===
 
 import { InvalidParameterError } from '@jonverrier/prompt-repository';
 import { ETimeWindow, EC4DiagramType, IDocGenOptions } from './DocGenTypes';
@@ -31,12 +16,16 @@ import {
    MinimatchFileFilter,
    detectSubdirectorySources
 } from './DirectoryTreeTraverser';
+import {
+   DEFAULT_C4_OUTPUT_FILES,
+   validateC4OutputFilename
+} from './C4ReadmeUtils';
 
 /**
  * Prints usage information to stdout.
  */
 function printUsage(): void {
-   console.log('Usage: generate-docs-cli --dir <path> --files <spec...> <time-window> [diagram-flags]');
+   console.log('Usage: c4-auto --dir <path> --files <spec...> <time-window> [options]');
    console.log('');
    console.log('Required:');
    console.log('  --dir <path>         Root directory to traverse');
@@ -50,23 +39,28 @@ function printUsage(): void {
    console.log('Diagram flags (optional, may be combined):');
    console.log('  --c4component        Generate C4 Component diagrams');
    console.log('  --c4context          Generate C4 Context diagrams');
-   console.log('  --rollup             Roll up subdirectory README.StrongAI.*.md to root');
+   console.log('  --rollup             Roll up subdirectory generated docs to scan root');
+   console.log('');
+   console.log('Output filenames (optional):');
+   console.log(`  --component-file <name>  Component doc basename (default: ${DEFAULT_C4_OUTPUT_FILES.kComponent})`);
+   console.log(`  --context-file <name>    Context doc basename (default: ${DEFAULT_C4_OUTPUT_FILES.kContext})`);
    console.log('');
    console.log('  --help, -h           Show this help message');
 }
 
 /**
- * Parses process.argv into an IDocGenOptions structure.
- * Throws InvalidParameterError for missing or invalid arguments.
+ * Parses CLI arguments into an IDocGenOptions structure.
+ * @param args - Arguments to parse (defaults to process.argv after node executable)
+ * @returns Parsed options
  */
-function parseArgs(): IDocGenOptions {
-   const args = process.argv.slice(2);
-
+export function parseArgs(args: string[] = process.argv.slice(2)): IDocGenOptions {
    let rootDir: string | null = null;
-   const fileSpecs: string[]         = [];
+   const fileSpecs: string[]            = [];
    const timeWindowFlags: ETimeWindow[] = [];
    const c4DiagramTypes: EC4DiagramType[] = [];
    let rollup = false;
+   let componentOutputFile = DEFAULT_C4_OUTPUT_FILES[EC4DiagramType.kComponent];
+   let contextOutputFile   = DEFAULT_C4_OUTPUT_FILES[EC4DiagramType.kContext];
 
    for (let i = 0; i < args.length; i++) {
       const arg = args[i];
@@ -86,7 +80,6 @@ function parseArgs(): IDocGenOptions {
             break;
 
          case '--files':
-            // Consume all following non-flag arguments as file specs
             while (i + 1 < args.length && !args[i + 1].startsWith('--')) {
                fileSpecs.push(args[++i]);
             }
@@ -119,12 +112,25 @@ function parseArgs(): IDocGenOptions {
             rollup = true;
             break;
 
+         case '--component-file':
+            if (i + 1 >= args.length) {
+               throw new InvalidParameterError('--component-file requires a filename argument');
+            }
+            componentOutputFile = args[++i];
+            break;
+
+         case '--context-file':
+            if (i + 1 >= args.length) {
+               throw new InvalidParameterError('--context-file requires a filename argument');
+            }
+            contextOutputFile = args[++i];
+            break;
+
          default:
             throw new InvalidParameterError(`Unknown argument: ${arg}`);
       }
    }
 
-   // Validate required arguments
    if (!rootDir) {
       throw new InvalidParameterError('--dir is required');
    }
@@ -145,6 +151,9 @@ function parseArgs(): IDocGenOptions {
       throw new InvalidParameterError('--rollup requires at least one of --c4component or --c4context');
    }
 
+   validateC4OutputFilename(componentOutputFile, '--component-file');
+   validateC4OutputFilename(contextOutputFile, '--context-file');
+
    return {
       rootDir,
       fileSpecs,
@@ -152,6 +161,8 @@ function parseArgs(): IDocGenOptions {
       c4DiagramTypes,
       rollup,
       hasSubdirectorySources: false,
+      componentOutputFile,
+      contextOutputFile,
       jobStartedAt: new Date()
    };
 }
@@ -185,6 +196,8 @@ async function main(): Promise<void> {
    console.log(`Time window: ${options.timeWindow}`);
    if (options.c4DiagramTypes.length > 0) {
       console.log(`C4 diagram types: ${options.c4DiagramTypes.join(', ')}`);
+      console.log(`Component output file: ${options.componentOutputFile}`);
+      console.log(`Context output file: ${options.contextOutputFile}`);
    }
    if (options.rollup) {
       console.log('Rollup: enabled');
@@ -198,13 +211,15 @@ async function main(): Promise<void> {
    console.log('Done.');
 }
 
-main().catch((error: unknown) => {
-   if (error instanceof InvalidParameterError) {
-      console.error(`Error: ${error.message}`);
-      console.error('');
-      printUsage();
-      process.exit(2);
-   }
-   console.error('Unexpected error:', error);
-   process.exit(1);
-});
+if (require.main === module) {
+   main().catch((error: unknown) => {
+      if (error instanceof InvalidParameterError) {
+         console.error(`Error: ${error.message}`);
+         console.error('');
+         printUsage();
+         process.exit(2);
+      }
+      console.error('Unexpected error:', error);
+      process.exit(1);
+   });
+}

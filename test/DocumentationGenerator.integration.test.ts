@@ -26,6 +26,7 @@ import {
    ETimeWindow,
    EC4DiagramType
 } from '../src/DocGenTypes';
+import { makeTestDocGenOptions } from './testDocGenOptions';
 
 import typedPrompts from '../src/Prompts.json';
 
@@ -87,16 +88,13 @@ Key components: UserProfileCard, WorkoutService, ExerciseRepository.`;
 // ---------------------------------------------------------------------------
 
 function makeOptions(overrides?: Partial<IDocGenOptions>): IDocGenOptions {
-   return {
+   return makeTestDocGenOptions({
       rootDir: FAKE_ROOT,
       fileSpecs: ['*.ts', '*.tsx'],
       timeWindow: ETimeWindow.kOneWeek,
       c4DiagramTypes: [EC4DiagramType.kComponent],
-      rollup: false,
-      hasSubdirectorySources: false,
-      jobStartedAt: new Date('2025-01-15'),
       ...overrides
-   };
+   });
 }
 
 function makeChatDriver(headerResponse = FAKE_HEADER_COMMENT, diagramResponse = FAKE_DIAGRAM): IChatDriver {

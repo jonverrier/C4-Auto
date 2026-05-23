@@ -17,7 +17,8 @@ import * as os from 'os';
 
 import { DirectoryTreeTraverser, NodeDirectoryReader, MinimatchFileFilter } from '../src/DirectoryTreeTraverser';
 import { VisitorFactory } from '../src/VisitorFactory';
-import { IDocGenOptions, ETimeWindow, EC4DiagramType } from '../src/DocGenTypes';
+import { IDocGenOptions, EC4DiagramType } from '../src/DocGenTypes';
+import { makeTestDocGenOptions } from './testDocGenOptions';
 
 // Fixture source files to copy into the temp directory
 const FIXTURE_FILES = [
@@ -57,15 +58,11 @@ describeE2e('DocumentationGenerator e2e', () => {
 
    // -------------------------------------------------------------------------
    it('generates header comments in all fixture files', async () => {
-      const options: IDocGenOptions = {
-         rootDir:      tempDir,
-         fileSpecs:    ['*.ts', '*.tsx'],
-         timeWindow:   ETimeWindow.kOneMonth,
-         c4DiagramTypes: [],
-         rollup: false,
-         hasSubdirectorySources: false,
+      const options = makeTestDocGenOptions({
+         rootDir: tempDir,
+         fileSpecs: ['*.ts', '*.tsx'],
          jobStartedAt: new Date()
-      };
+      });
 
       const visitors  = VisitorFactory.createAll(options);
       const traverser = new DirectoryTreeTraverser(visitors, new NodeDirectoryReader(), new MinimatchFileFilter());
@@ -82,15 +79,12 @@ describeE2e('DocumentationGenerator e2e', () => {
 
    // -------------------------------------------------------------------------
    it('generates a C4 Component README with a Mermaid fence', async () => {
-      const options: IDocGenOptions = {
-         rootDir:        tempDir,
-         fileSpecs:      ['*.ts', '*.tsx'],
-         timeWindow:     ETimeWindow.kOneMonth,
+      const options = makeTestDocGenOptions({
+         rootDir: tempDir,
+         fileSpecs: ['*.ts', '*.tsx'],
          c4DiagramTypes: [EC4DiagramType.kComponent],
-         rollup: false,
-         hasSubdirectorySources: false,
-         jobStartedAt:   new Date()
-      };
+         jobStartedAt: new Date()
+      });
 
       const visitors  = VisitorFactory.createAll(options);
       const traverser = new DirectoryTreeTraverser(visitors, new NodeDirectoryReader(), new MinimatchFileFilter());
@@ -105,15 +99,12 @@ describeE2e('DocumentationGenerator e2e', () => {
 
    // -------------------------------------------------------------------------
    it('generates both Component and Context READMEs when both flags are set', async () => {
-      const options: IDocGenOptions = {
-         rootDir:        tempDir,
-         fileSpecs:      ['*.ts', '*.tsx'],
-         timeWindow:     ETimeWindow.kOneMonth,
+      const options = makeTestDocGenOptions({
+         rootDir: tempDir,
+         fileSpecs: ['*.ts', '*.tsx'],
          c4DiagramTypes: [EC4DiagramType.kComponent, EC4DiagramType.kContext],
-         rollup: false,
-         hasSubdirectorySources: false,
-         jobStartedAt:   new Date()
-      };
+         jobStartedAt: new Date()
+      });
 
       const visitors  = VisitorFactory.createAll(options);
       const traverser = new DirectoryTreeTraverser(visitors, new NodeDirectoryReader(), new MinimatchFileFilter());
@@ -131,15 +122,12 @@ describeE2e('DocumentationGenerator e2e', () => {
 
    // -------------------------------------------------------------------------
    it('does not regenerate fresh files on a second run', async () => {
-      const options: IDocGenOptions = {
-         rootDir:        tempDir,
-         fileSpecs:      ['*.ts', '*.tsx'],
-         timeWindow:     ETimeWindow.kOneMonth,
+      const options = makeTestDocGenOptions({
+         rootDir: tempDir,
+         fileSpecs: ['*.ts', '*.tsx'],
          c4DiagramTypes: [EC4DiagramType.kComponent],
-         rollup: false,
-         hasSubdirectorySources: false,
-         jobStartedAt:   new Date()
-      };
+         jobStartedAt: new Date()
+      });
 
       // First run
       const visitors1  = VisitorFactory.createAll(options);
