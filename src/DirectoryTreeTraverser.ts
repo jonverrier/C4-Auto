@@ -26,7 +26,7 @@ import {
 } from './DocGenTypes';
 
 // Directories that are always skipped during traversal.
-const EXCLUDED_DIRS: ReadonlyArray<string> = [
+export const EXCLUDED_DIRS: ReadonlyArray<string> = [
    'node_modules',
    'dist',
    '.git',
@@ -137,4 +137,50 @@ export class DirectoryTreeTraverser {
          await this.visitDirectory(path.join(dirPath, subdir), options);
       }
    }
+}
+
+/**
+ * Returns true when any subdirectory under rootDir contains files matching fileSpecs.
+ * @param rootDir - Scan root directory
+ * @param fileSpecs - Source file globs
+ * @param directoryReader - Directory listing abstraction
+ * @param fileFilter - Filename glob matcher
+ * @returns True when nested source files exist below the root
+ */
+export async function detectSubdirectorySources(
+   rootDir: string,
+   fileSpecs: string[],
+   directoryReader: IDirectoryReader,
+   fileFilter: IFileFilter
+): Promise<boolean> {
+   async function scanDirectory(dirPath: string, isRoot: boolean): Promise<boolean> {
+      const entries = await directoryReader.listDirectory(dirPath);
+      const subdirs: string[] = [];
+      const files: string[] = [];
+
+      for (const entry of entries) {
+         const fullPath = path.join(dirPath, entry);
+         if (await directoryReader.isDirectory(fullPath)) {
+            if (!EXCLUDED_DIRS.includes(entry)) {
+               subdirs.push(entry);
+            }
+         } else {
+            files.push(entry);
+         }
+      }
+
+      if (!isRoot && files.some(filename => fileFilter.matches(filename, fileSpecs))) {
+         return true;
+      }
+
+      for (const subdir of subdirs) {
+         if (await scanDirectory(path.join(dirPath, subdir), false)) {
+            return true;
+         }
+      }
+
+      return false;
+   }
+
+   return scanDirectory(rootDir, true);
 }

@@ -10,7 +10,7 @@ import { expect } from 'expect';
 import sinon from 'sinon';
 import * as path from 'path';
 
-import { DirectoryTreeTraverser } from '../src/DirectoryTreeTraverser';
+import { DirectoryTreeTraverser, detectSubdirectorySources } from '../src/DirectoryTreeTraverser';
 import {
    IDirectoryReader,
    IFileFilter,
@@ -35,6 +35,7 @@ function makeOptions(overrides?: Partial<IDocGenOptions>): IDocGenOptions {
       timeWindow: ETimeWindow.kOneWeek,
       c4DiagramTypes: [],
       rollup: false,
+      hasSubdirectorySources: false,
       jobStartedAt: new Date('2025-01-15'),
       ...overrides
    };
@@ -295,6 +296,30 @@ describe('DirectoryTreeTraverser', () => {
          await traverser.traverse(makeOptions());
 
          expect(finalizeStub.callCount).toBe(1);
+      });
+   });
+
+   describe('detectSubdirectorySources', () => {
+      it('returns false for a flat directory tree', async () => {
+         const tree: Record<string, string[]> = {
+            [ROOT]: ['a.ts', 'b.ts']
+         };
+         const reader = makeDirectoryReader(tree);
+         const filter = makeFileFilter('.ts');
+
+         await expect(detectSubdirectorySources(ROOT, ['*.ts'], reader, filter)).resolves.toBe(false);
+      });
+
+      it('returns true when a nested directory contains matching files', async () => {
+         const child = path.join(ROOT, 'child');
+         const tree: Record<string, string[]> = {
+            [ROOT]:   ['a.ts', 'child'],
+            [child]:  ['nested.ts']
+         };
+         const reader = makeDirectoryReader(tree);
+         const filter = makeFileFilter('.ts');
+
+         await expect(detectSubdirectorySources(ROOT, ['*.ts'], reader, filter)).resolves.toBe(true);
       });
    });
 });

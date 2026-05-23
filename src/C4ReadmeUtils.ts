@@ -86,3 +86,53 @@ export function buildReadmeDatestamp(jobStartedAt: Date): string {
    const dateStr = formatDateYYYYMMDD(jobStartedAt);
    return `${README_DATESTAMP_PREFIX}${dateStr}${README_DATESTAMP_SUFFIX}\n\n`;
 }
+
+/**
+ * Parses the generated date from a README.StrongAI.*.md file, if present.
+ * @param content - README markdown content
+ * @returns Parsed generation date or null
+ */
+export function extractReadmeGeneratedDate(content: string): Date | null {
+   const match = README_DATESTAMP_RE.exec(content);
+   if (!match) return null;
+   return parseDateYYYYMMDD(match[1]);
+}
+
+/**
+ * Returns true when a rolled-up root README should be regenerated.
+ * @param existingRootReadme - Current root rollup content, if any
+ * @param childReadmeContents - Subdirectory README inputs for this diagram type
+ * @param rootModuleHeaderDates - Dates parsed from root-level module header sentinels
+ * @param options - Doc-gen options including jobStartedAt and timeWindow
+ * @returns True when rollup output should be rewritten
+ */
+export function isRollupOutputStale(
+   existingRootReadme: string | null,
+   childReadmeContents: string[],
+   rootModuleHeaderDates: Date[],
+   options: IDocGenOptions
+): boolean {
+   if (isReadmeOutputStale(existingRootReadme, options)) {
+      return true;
+   }
+
+   const rootRollupDate = extractReadmeGeneratedDate(existingRootReadme!);
+   if (!rootRollupDate) {
+      return true;
+   }
+
+   for (const childContent of childReadmeContents) {
+      const childDate = extractReadmeGeneratedDate(childContent);
+      if (childDate && childDate.getTime() >= rootRollupDate.getTime()) {
+         return true;
+      }
+   }
+
+   for (const headerDate of rootModuleHeaderDates) {
+      if (headerDate.getTime() >= rootRollupDate.getTime()) {
+         return true;
+      }
+   }
+
+   return false;
+}

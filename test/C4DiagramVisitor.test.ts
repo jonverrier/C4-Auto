@@ -40,6 +40,7 @@ function makeOptions(overrides?: Partial<IDocGenOptions>): IDocGenOptions {
       timeWindow: ETimeWindow.kOneWeek,
       c4DiagramTypes: [EC4DiagramType.kComponent],
       rollup: false,
+      hasSubdirectorySources: false,
       jobStartedAt: new Date('2025-01-15'),
       ...overrides
    };
@@ -236,6 +237,26 @@ describe('C4DiagramVisitor', () => {
 
    // -------------------------------------------------------------------------
    describe('visit', () => {
+      it('skips root README generation when rollup will synthesize the root', async () => {
+         const sourceMap: Record<string, string> = {
+            '/root/A.ts': `${HEADER_BLOCK}\nexport class A {}`
+         };
+         const writer  = makeFileWriter();
+         const driver  = makeChatDriver();
+         const visitor = new C4DiagramVisitor(
+            makeFileReader(sourceMap), writer, driver, makePromptRepo(), [EC4DiagramType.kComponent]
+         );
+
+         await visitor.visit('/root', ['/root/A.ts'], makeOptions({
+            rollup: true,
+            hasSubdirectorySources: true,
+            rootDir: '/root'
+         }));
+
+         expect((driver.getModelResponse as sinon.SinonStub).callCount).toBe(0);
+         expect((writer.writeFile as sinon.SinonStub).callCount).toBe(0);
+      });
+
       it('generates a Component README when kComponent is requested', async () => {
          const sourceMap: Record<string, string> = {
             '/root/A.ts': `${HEADER_BLOCK}\nexport class A {}`

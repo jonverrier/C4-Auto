@@ -63,6 +63,7 @@ describeE2e('DocumentationGenerator e2e', () => {
          timeWindow:   ETimeWindow.kOneMonth,
          c4DiagramTypes: [],
          rollup: false,
+         hasSubdirectorySources: false,
          jobStartedAt: new Date()
       };
 
@@ -87,6 +88,7 @@ describeE2e('DocumentationGenerator e2e', () => {
          timeWindow:     ETimeWindow.kOneMonth,
          c4DiagramTypes: [EC4DiagramType.kComponent],
          rollup: false,
+         hasSubdirectorySources: false,
          jobStartedAt:   new Date()
       };
 
@@ -109,6 +111,7 @@ describeE2e('DocumentationGenerator e2e', () => {
          timeWindow:     ETimeWindow.kOneMonth,
          c4DiagramTypes: [EC4DiagramType.kComponent, EC4DiagramType.kContext],
          rollup: false,
+         hasSubdirectorySources: false,
          jobStartedAt:   new Date()
       };
 
@@ -134,6 +137,7 @@ describeE2e('DocumentationGenerator e2e', () => {
          timeWindow:     ETimeWindow.kOneMonth,
          c4DiagramTypes: [EC4DiagramType.kComponent],
          rollup: false,
+         hasSubdirectorySources: false,
          jobStartedAt:   new Date()
       };
 

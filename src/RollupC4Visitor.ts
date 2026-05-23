@@ -24,8 +24,9 @@ import {
 import {
    C4_OUTPUT_FILES,
    buildReadmeDatestamp,
-   isReadmeOutputStale
+   isRollupOutputStale
 } from './C4ReadmeUtils';
+import { extractModuleHeaderBlock, extractModuleHeaderDate } from './ModuleHeaderExtract';
 import { c4ComponentRollupPromptId, c4ContextRollupPromptId } from './PromptIds';
 
 /** Base word counts for rollup overview and detail sections. */
@@ -33,6 +34,9 @@ const ROLLUP_INTRO_BASE_WORD_COUNT  = 80;
 const ROLLUP_DETAIL_BASE_WORD_COUNT = 120;
 const ROLLUP_WORDS_PER_SUBDIR       = 25;
 const ROLLUP_INTRO_FRACTION         = 0.4;
+
+/** Label used for root-level module headers in rollup prompts. */
+const ROOT_MODULE_HEADERS_SECTION = '(root)';
 
 /** Maps EC4DiagramType to its rollup prompt ID. */
 const ROLLUP_PROMPT_IDS: Record<EC4DiagramType, string> = {
@@ -56,6 +60,7 @@ export class RollupC4Visitor implements IDirectoryVisitor {
    readonly fileSpecs: string[];
 
    private readonly accumulated: IAccumulatedReadme[] = [];
+   private rootFilePaths: string[] = [];
 
    /**
     * @param fileReader - IFileReader implementation
@@ -76,10 +81,12 @@ export class RollupC4Visitor implements IDirectoryVisitor {
       this.fileSpecs = fileSpecs;
    }
 
-   async visit(directoryPath: string, _filePaths: string[], options: IDocGenOptions): Promise<void> {
+   async visit(directoryPath: string, filePaths: string[], options: IDocGenOptions): Promise<void> {
       const normalizedRoot = path.resolve(options.rootDir);
       const normalizedDir  = path.resolve(directoryPath);
+
       if (normalizedDir === normalizedRoot) {
+         this.rootFilePaths = filePaths;
          return;
       }
 
@@ -102,28 +109,66 @@ export class RollupC4Visitor implements IDirectoryVisitor {
          return;
       }
 
+      const { rootModuleHeaders, rootModuleHeaderDates } = await this.collectRootModuleHeaders();
+
       for (const diagramType of this.diagramTypes) {
-         await this.generateRollup(options.rootDir, diagramType, options);
+         await this.generateRollup(
+            options.rootDir,
+            diagramType,
+            options,
+            rootModuleHeaders,
+            rootModuleHeaderDates
+         );
       }
    }
 
    /**
-    * Computes scaled intro and detail word counts based on subdirectory count.
-    * @param subdirCount - Number of subdirectory README inputs
+    * Computes scaled intro and detail word counts based on input section count.
+    * @param inputSectionCount - Number of subdirectory and root input sections
     * @returns Intro and detail word targets
     */
-   computeWordCounts(subdirCount: number): { introWords: number; detailWords: number } {
+   computeWordCounts(inputSectionCount: number): { introWords: number; detailWords: number } {
       const totalWords  = ROLLUP_INTRO_BASE_WORD_COUNT + ROLLUP_DETAIL_BASE_WORD_COUNT
-                        + Math.floor(Math.sqrt(subdirCount) * ROLLUP_WORDS_PER_SUBDIR);
+                        + Math.floor(Math.sqrt(inputSectionCount) * ROLLUP_WORDS_PER_SUBDIR);
       const introWords  = Math.floor(totalWords * ROLLUP_INTRO_FRACTION);
       const detailWords = totalWords - introWords;
       return { introWords, detailWords };
    }
 
+   private async collectRootModuleHeaders(): Promise<{
+      rootModuleHeaders: string;
+      rootModuleHeaderDates: Date[];
+   }> {
+      if (this.rootFilePaths.length === 0) {
+         return { rootModuleHeaders: '', rootModuleHeaderDates: [] };
+      }
+
+      const parts: string[] = [];
+      const dates: Date[] = [];
+
+      for (const filePath of this.rootFilePaths) {
+         const source = await this.fileReader.readFile(filePath);
+         const header = extractModuleHeaderBlock(source);
+         const date   = extractModuleHeaderDate(source);
+         if (date) {
+            dates.push(date);
+         }
+         parts.push(`### ${path.basename(filePath)}\n${header}`);
+      }
+
+      const rootModuleHeaders = parts.length > 0
+         ? `## ${ROOT_MODULE_HEADERS_SECTION}\n${parts.join('\n\n')}`
+         : '';
+
+      return { rootModuleHeaders, rootModuleHeaderDates: dates };
+   }
+
    private async generateRollup(
       rootDir: string,
       diagramType: EC4DiagramType,
-      options: IDocGenOptions
+      options: IDocGenOptions,
+      rootModuleHeaders: string,
+      rootModuleHeaderDates: Date[]
    ): Promise<void> {
       const entries = this.accumulated.filter(entry => entry.diagramType === diagramType);
       if (entries.length === 0) {
@@ -138,7 +183,8 @@ export class RollupC4Visitor implements IDirectoryVisitor {
          // File does not exist yet.
       }
 
-      if (!isReadmeOutputStale(existingContent, options)) {
+      const childContents = entries.map(entry => entry.content);
+      if (!isRollupOutputStale(existingContent, childContents, rootModuleHeaderDates, options)) {
          return;
       }
 
@@ -151,11 +197,13 @@ export class RollupC4Visitor implements IDirectoryVisitor {
       const subdirectorySummaries = entries
          .map(entry => `## ${entry.relativeDir}\n${entry.content}`)
          .join('\n\n');
-      const { introWords, detailWords } = this.computeWordCounts(entries.length);
+      const inputSectionCount = entries.length + (rootModuleHeaders ? 1 : 0);
+      const { introWords, detailWords } = this.computeWordCounts(inputSectionCount);
 
       const systemPrompt = this.promptRepo.expandSystemPrompt(prompt, {});
       const userPrompt   = this.promptRepo.expandUserPrompt(prompt, {
          subdirectorySummaries,
+         rootModuleHeaders,
          introWordCount: String(introWords),
          detailWordCount: String(detailWords)
       });

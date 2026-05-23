@@ -25,7 +25,12 @@
 import { InvalidParameterError } from '@jonverrier/prompt-repository';
 import { ETimeWindow, EC4DiagramType, IDocGenOptions } from './DocGenTypes';
 import { VisitorFactory } from './VisitorFactory';
-import { DirectoryTreeTraverser, NodeDirectoryReader, MinimatchFileFilter } from './DirectoryTreeTraverser';
+import {
+   DirectoryTreeTraverser,
+   NodeDirectoryReader,
+   MinimatchFileFilter,
+   detectSubdirectorySources
+} from './DirectoryTreeTraverser';
 
 /**
  * Prints usage information to stdout.
@@ -146,6 +151,7 @@ function parseArgs(): IDocGenOptions {
       timeWindow: timeWindowFlags[0],
       c4DiagramTypes,
       rollup,
+      hasSubdirectorySources: false,
       jobStartedAt: new Date()
    };
 }
@@ -155,11 +161,23 @@ function parseArgs(): IDocGenOptions {
  */
 async function main(): Promise<void> {
    const options  = parseArgs();
+   const directoryReader = new NodeDirectoryReader();
+   const fileFilter      = new MinimatchFileFilter();
+
+   if (options.rollup) {
+      options.hasSubdirectorySources = await detectSubdirectorySources(
+         options.rootDir,
+         options.fileSpecs,
+         directoryReader,
+         fileFilter
+      );
+   }
+
    const visitors = VisitorFactory.createAll(options);
    const traverser = new DirectoryTreeTraverser(
       visitors,
-      new NodeDirectoryReader(),
-      new MinimatchFileFilter()
+      directoryReader,
+      fileFilter
    );
 
    console.log(`Generating docs for: ${options.rootDir}`);
@@ -170,6 +188,9 @@ async function main(): Promise<void> {
    }
    if (options.rollup) {
       console.log('Rollup: enabled');
+      if (options.hasSubdirectorySources) {
+         console.log('Rollup: root per-directory C4 skipped (nested sources detected)');
+      }
    }
    console.log('');
 
