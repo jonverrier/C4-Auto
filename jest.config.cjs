@@ -20,7 +20,8 @@ module.exports = {
          testMatch: [
             '**/DirectoryTreeTraverser.test.ts',
             '**/ModuleHeaderVisitor.test.ts',
-            '**/C4DiagramVisitor.test.ts'
+            '**/C4DiagramVisitor.test.ts',
+            '**/RollupC4Visitor.test.ts'
          ],
          transform: tsJestTransform,
          collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts'],
@@ -35,6 +36,7 @@ module.exports = {
             '**/DirectoryTreeTraverser.test.ts',
             '**/ModuleHeaderVisitor.test.ts',
             '**/C4DiagramVisitor.test.ts',
+            '**/RollupC4Visitor.test.ts',
             '**/DocumentationGenerator.integration.test.ts'
          ],
          transform: tsJestTransform,

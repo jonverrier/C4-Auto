@@ -43,21 +43,25 @@ C4 is built for “just enough” documentation: enough to onboard people and na
 **Install and run**
 
 ```bash
-git clone https://github.com/jonverrier/C4-Auto.git
-cd C4-Auto
-npm install
+npm install --save-dev @jonverrier/c4-auto
 ```
 
 Example: generate docs for `./src`, refresh files older than one month, and produce both Component and Context diagrams:
 
 ```bash
-npx ts-node src/generate-docs-cli.ts --dir ./src --files "*.ts" "*.tsx" --one-month --c4component --c4context
+npx c4-auto --dir ./src --files "*.ts" "*.tsx" --one-month --c4component --c4context
+```
+
+For packages with nested source trees, add `--rollup` to synthesize higher-level `README.StrongAI.*.md` files at the scan root from subdirectory docs:
+
+```bash
+npx c4-auto --dir ./src --files "*.ts" "*.tsx" --one-month --c4component --c4context --rollup
 ```
 
 Or use the npm script and pass options after `--`:
 
 ```bash
-npm run generate-docs -- --dir ./src --files "*.ts" "*.tsx" --one-month --c4component --c4context
+npm run generate-docs -- --dir ./src --files "*.ts" "*.tsx" --one-month --c4component --c4context --rollup
 ```
 
 ---
@@ -77,12 +81,13 @@ npm run generate-docs -- --dir ./src --files "*.ts" "*.tsx" --one-month --c4comp
 
 - `--c4component` – Write `README.StrongAI.Component.md` in each directory.
 - `--c4context` – Write `README.StrongAI.Context.md` in each directory.
+- `--rollup` – After traversal, roll up subdirectory `README.StrongAI.*.md` files into root-level summaries (requires `--c4component` and/or `--c4context`). Skipped when only one directory has generated docs.
 - `--help`, `-h` – Print usage.
 
 **Example**
 
 ```bash
-npx ts-node src/generate-docs-cli.ts --dir ./src --files "*.ts" "*.tsx" --one-week --c4component
+npx c4-auto --dir ./src --files "*.ts" "*.tsx" --one-week --c4component
 ```
 
 ---

@@ -55,6 +55,7 @@ export enum EVisitorPriority {
  * @property fileSpecs - Glob-style file specs, e.g. ['*.ts', '*.tsx']
  * @property timeWindow - Staleness window: regenerate files older than this
  * @property c4DiagramTypes - Which C4 diagram types to generate (empty = none)
+ * @property rollup - When true, synthesize root-level README files from subdirectory docs
  * @property jobStartedAt - Timestamp when the job was started, used for staleness checks
  */
 export interface IDocGenOptions {
@@ -62,6 +63,7 @@ export interface IDocGenOptions {
    fileSpecs: string[];
    timeWindow: ETimeWindow;
    c4DiagramTypes: EC4DiagramType[];
+   rollup: boolean;
    jobStartedAt: Date;
 }
 
@@ -137,4 +139,10 @@ export interface IDirectoryVisitor {
     * @param options - The parsed CLI options for this job
     */
    visit(directoryPath: string, filePaths: string[], options: IDocGenOptions): Promise<void>;
+
+   /**
+    * Optional hook invoked once after the full directory tree has been traversed.
+    * @param options - The parsed CLI options for this job
+    */
+   finalize?(options: IDocGenOptions): Promise<void>;
 }

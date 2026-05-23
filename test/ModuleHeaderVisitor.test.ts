@@ -45,6 +45,7 @@ function makeOptions(overrides?: Partial<IDocGenOptions>): IDocGenOptions {
       fileSpecs: ['*.ts'],
       timeWindow: ETimeWindow.kOneWeek,
       c4DiagramTypes: [],
+      rollup: false,
       jobStartedAt: new Date('2025-01-15'),
       ...overrides
    };

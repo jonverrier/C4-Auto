@@ -93,6 +93,9 @@ export class DirectoryTreeTraverser {
     */
    async traverse(options: IDocGenOptions): Promise<void> {
       await this.visitDirectory(options.rootDir, options);
+      for (const visitor of this.sortedVisitors) {
+         await visitor.finalize?.(options);
+      }
    }
 
    /**
