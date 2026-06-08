@@ -1,6 +1,6 @@
 {
   "name": "@jonverrier/auto-doc",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AutoDoc — automated C4 architecture documentation for TypeScript projects",
   "private": false,
   "engines": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jonverrier/C4-Auto.git"
+    "url": "git+https://github.com/jonverrier/AutoDoc.git"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"

@@ -203,7 +203,7 @@ GitHub Actions workflow `.github/workflows/publish.yml` also publishes on GitHub
 
 ## Related
 
-- **[AgentDoc](https://github.com/jonverrier/C4-Agent)** – MCP server for interactive C4 diagram generation from your IDE. AutoDoc is the automated CLI sibling.
+- **[AgentDoc](https://github.com/jonverrier/AgentDoc)** – MCP server for interactive C4 diagram generation from your IDE. AutoDoc is the automated CLI sibling.
 
 ---
 

@@ -267,7 +267,7 @@ Sentinel markers, header extraction, strip/build helpers, and shared staleness l
 | Package | Relationship |
 |---------|--------------|
 | `@jonverrier/prompt-repository` | LLM drivers, prompt expansion, error classes |
-| **C4-Agent** | Interactive MCP sibling; separate repo |
+| **AgentDoc** | Interactive MCP sibling; separate repo |
 | **Consumer repos** | Dev dependency; `auto-doc` npm script on `./src` |
 
 ---

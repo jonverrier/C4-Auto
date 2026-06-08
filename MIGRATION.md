@@ -54,5 +54,5 @@ auto-doc --dir ./src --files "*.ts" --one-month --c4component --rollup --design-
 
 ## Related
 
-- [AgentDoc MIGRATION.md](../C4-Agent/MIGRATION.md) — MCP server rename.
+- [AgentDoc MIGRATION.md](../AgentDoc/MIGRATION.md) — MCP server rename.
 - [AutoDoc README](README.md) — full CLI reference.
