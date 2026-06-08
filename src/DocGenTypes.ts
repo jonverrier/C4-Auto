@@ -62,6 +62,7 @@ export enum EVisitorPriority {
  * @property jobStartedAt - Timestamp when the job was started, used for staleness checks
  * @property dryRun - When true, log planned updates without LLM calls or file writes
  * @property skipHeaders - When true, omit ModuleHeaderVisitor (diagrams-only mode)
+ * @property designFile - Optional explicit human-authored design intent file for rollup context
  */
 export interface IDocGenOptions {
    rootDir: string;
@@ -75,10 +76,11 @@ export interface IDocGenOptions {
    jobStartedAt: Date;
    dryRun: boolean;
    skipHeaders: boolean;
+   designFile?: string;
 }
 
 /** Prefix for dry-run log lines written to stdout. */
-export const DRY_RUN_LOG_PREFIX = 'c4-auto: dry-run:';
+export const DRY_RUN_LOG_PREFIX = 'auto-doc: dry-run:';
 
 /**
  * Abstraction over the filesystem directory listing, enabling test mocking.
@@ -119,6 +121,13 @@ export interface IFileReader {
     * @param filePath - Absolute path to the file
     */
    readFile(filePath: string): Promise<string>;
+
+   /**
+    * Returns the last-modified time for a file, or null when unavailable.
+    * Optional; production readers implement this for rollup staleness checks.
+    * @param filePath - Absolute path to the file
+    */
+   getFileModifiedTime?(filePath: string): Promise<Date | null>;
 }
 
 /**

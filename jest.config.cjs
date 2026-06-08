@@ -1,5 +1,5 @@
 /**
- * Jest configuration for C4-Auto tests.
+ * Jest configuration for AutoDoc tests.
  */
 // Copyright (c) 2025, 2026 Jon Verrier
 

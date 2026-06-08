@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * @module generate-docs-cli
- * Command-line entry point for the C4-Auto documentation generator.
+ * Command-line entry point for the AutoDoc documentation generator.
  * Parses arguments, constructs IDocGenOptions, wires visitors via VisitorFactory,
  * and runs the DirectoryTreeTraverser.
  */
@@ -25,7 +25,7 @@ import {
  * Prints usage information to stdout.
  */
 function printUsage(): void {
-   console.log('Usage: c4-auto --dir <path> --files <spec...> <time-window> [options]');
+   console.log('Usage: auto-doc --dir <path> --files <spec...> <time-window> [options]');
    console.log('');
    console.log('Required:');
    console.log('  --dir <path>         Root directory to traverse');
@@ -50,6 +50,9 @@ function printUsage(): void {
    console.log(`  --component-file <name>  Component doc basename (default: ${DEFAULT_C4_OUTPUT_FILES.kComponent})`);
    console.log(`  --context-file <name>    Context doc basename (default: ${DEFAULT_C4_OUTPUT_FILES.kContext})`);
    console.log('');
+   console.log('Rollup context (optional):');
+   console.log('  --design-file <path>     Human-authored design intent for rollup (default: auto-detect Design.md/DESIGN.md)');
+   console.log('');
    console.log('  --help, -h           Show this help message');
 }
 
@@ -68,6 +71,7 @@ export function parseArgs(args: string[] = process.argv.slice(2)): IDocGenOption
    let skipHeaders = false;
    let componentOutputFile = DEFAULT_C4_OUTPUT_FILES[EC4DiagramType.kComponent];
    let contextOutputFile   = DEFAULT_C4_OUTPUT_FILES[EC4DiagramType.kContext];
+   let designFile: string | undefined;
 
    for (let i = 0; i < args.length; i++) {
       const arg = args[i];
@@ -142,6 +146,13 @@ export function parseArgs(args: string[] = process.argv.slice(2)): IDocGenOption
             contextOutputFile = args[++i];
             break;
 
+         case '--design-file':
+            if (i + 1 >= args.length) {
+               throw new InvalidParameterError('--design-file requires a path argument');
+            }
+            designFile = args[++i];
+            break;
+
          default:
             throw new InvalidParameterError(`Unknown argument: ${arg}`);
       }
@@ -185,7 +196,8 @@ export function parseArgs(args: string[] = process.argv.slice(2)): IDocGenOption
       contextOutputFile,
       jobStartedAt: new Date(),
       dryRun,
-      skipHeaders
+      skipHeaders,
+      designFile
    };
 }
 
@@ -223,6 +235,11 @@ async function main(): Promise<void> {
    }
    if (options.rollup) {
       console.log('Rollup: enabled');
+      if (options.designFile) {
+         console.log(`Rollup design file: ${options.designFile}`);
+      } else {
+         console.log('Rollup design file: auto-detect Design.md/DESIGN.md');
+      }
       if (options.hasSubdirectorySources) {
          console.log('Rollup: root per-directory C4 skipped (nested sources detected)');
       }

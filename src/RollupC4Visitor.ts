@@ -29,6 +29,11 @@ import {
 } from './C4ReadmeUtils';
 import { extractModuleHeaderBlock, extractModuleHeaderDate } from './ModuleHeaderExtract';
 import { c4ComponentRollupPromptId, c4ContextRollupPromptId } from './PromptIds';
+import {
+   formatDesignContextForPrompt,
+   IDesignContext,
+   loadDesignContext
+} from './DesignContextUtils';
 
 /** Base word counts for rollup overview and detail sections. */
 const ROLLUP_INTRO_BASE_WORD_COUNT  = 80;
@@ -111,6 +116,7 @@ export class RollupC4Visitor implements IDirectoryVisitor {
       }
 
       const { rootModuleHeaders, rootModuleHeaderDates } = await this.collectRootModuleHeaders();
+      const designContext = await this.loadDesignContextForRollup(options);
 
       for (const diagramType of this.diagramTypes) {
          await this.generateRollup(
@@ -118,7 +124,8 @@ export class RollupC4Visitor implements IDirectoryVisitor {
             diagramType,
             options,
             rootModuleHeaders,
-            rootModuleHeaderDates
+            rootModuleHeaderDates,
+            designContext
          );
       }
    }
@@ -164,12 +171,22 @@ export class RollupC4Visitor implements IDirectoryVisitor {
       return { rootModuleHeaders, rootModuleHeaderDates: dates };
    }
 
+   private async loadDesignContextForRollup(options: IDocGenOptions): Promise<IDesignContext | null> {
+      return loadDesignContext(
+         this.fileReader,
+         options.rootDir,
+         options.designFile,
+         this.fileReader.getFileModifiedTime?.bind(this.fileReader)
+      );
+   }
+
    private async generateRollup(
       rootDir: string,
       diagramType: EC4DiagramType,
       options: IDocGenOptions,
       rootModuleHeaders: string,
-      rootModuleHeaderDates: Date[]
+      rootModuleHeaderDates: Date[],
+      designContext: IDesignContext | null
    ): Promise<void> {
       const entries = this.accumulated.filter(entry => entry.diagramType === diagramType);
       if (entries.length === 0) {
@@ -185,7 +202,14 @@ export class RollupC4Visitor implements IDirectoryVisitor {
       }
 
       const childContents = entries.map(entry => entry.content);
-      if (!isRollupOutputStale(existingContent, childContents, rootModuleHeaderDates, options)) {
+      const designContextForPrompt = formatDesignContextForPrompt(designContext);
+      if (!isRollupOutputStale(
+         existingContent,
+         childContents,
+         rootModuleHeaderDates,
+         options,
+         designContext?.modifiedAt ?? null
+      )) {
          return;
       }
 
@@ -203,13 +227,16 @@ export class RollupC4Visitor implements IDirectoryVisitor {
       const subdirectorySummaries = entries
          .map(entry => `## ${entry.relativeDir}\n${entry.content}`)
          .join('\n\n');
-      const inputSectionCount = entries.length + (rootModuleHeaders ? 1 : 0);
+      const inputSectionCount = entries.length
+         + (rootModuleHeaders ? 1 : 0)
+         + (designContextForPrompt ? 1 : 0);
       const { introWords, detailWords } = this.computeWordCounts(inputSectionCount);
 
       const systemPrompt = this.promptRepo.expandSystemPrompt(prompt, {});
       const userPrompt   = this.promptRepo.expandUserPrompt(prompt, {
          subdirectorySummaries,
          rootModuleHeaders,
+         designContext: designContextForPrompt,
          introWordCount: String(introWords),
          detailWordCount: String(detailWords)
       });

@@ -38,6 +38,15 @@ export class NodeFileReader implements IFileReader {
    async readFile(filePath: string): Promise<string> {
       return fs.readFile(filePath, 'utf8');
    }
+
+   async getFileModifiedTime(filePath: string): Promise<Date | null> {
+      try {
+         const stat = await fs.stat(filePath);
+         return stat.mtime;
+      } catch {
+         return null;
+      }
+   }
 }
 
 /**

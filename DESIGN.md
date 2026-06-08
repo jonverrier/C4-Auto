@@ -1,6 +1,6 @@
-# C4-Auto — Package Design
+# AutoDoc — Package Design
 
-This document describes how `@jonverrier/c4-auto` is organised: the CLI and traversal engine, the visitor pipeline, dependency rules, and how stages communicate. It is the canonical design reference for this package.
+This document describes how `@jonverrier/auto-doc` is organised: the CLI and traversal engine, the visitor pipeline, dependency rules, and how stages communicate. It is the canonical design reference for this package.
 
 For usage and CLI flags, see [`README.md`](README.md). For agent-oriented notes, see [`AGENTS.md`](AGENTS.md).
 
@@ -8,11 +8,11 @@ For usage and CLI flags, see [`README.md`](README.md). For agent-oriented notes,
 
 ## Purpose
 
-C4-Auto is a **standalone CLI** that walks a TypeScript source tree and generates architecture documentation:
+AutoDoc is a **standalone CLI** that walks a TypeScript source tree and generates architecture documentation:
 
 1. **Module header comments** — LLM-authored summary blocks embedded in each `.ts`/`.tsx` file.
 2. **Per-directory C4 markdown** — Component and/or Context Mermaid diagrams in generated markdown files (default: `README.StrongAI.Component.md`, `README.StrongAI.Context.md`).
-3. **Optional rollup** — Package-level summaries at the scan root, synthesised from subdirectory docs plus root-level module headers.
+3. **Optional rollup** — Package-level summaries at the scan root, synthesised from subdirectory docs, root-level module headers, and optional human-authored design intent (`Design.md` / `DESIGN.md`).
 
 The tool never overwrites a project’s hand-written `README.md`.
 
@@ -268,7 +268,7 @@ Sentinel markers, header extraction, strip/build helpers, and shared staleness l
 |---------|--------------|
 | `@jonverrier/prompt-repository` | LLM drivers, prompt expansion, error classes |
 | **C4-Agent** | Interactive MCP sibling; separate repo |
-| **Consumer repos** | Dev dependency; `c4-auto` npm script on `./src` |
+| **Consumer repos** | Dev dependency; `auto-doc` npm script on `./src` |
 
 ---
 
