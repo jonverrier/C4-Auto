@@ -119,6 +119,19 @@ describe('generate-docs-cli.parseArgs', () => {
       expect(options.skipHeaders).toBe(true);
    });
 
+   it('parses --design-file for rollup context', () => {
+      const options = parseArgs([
+         '--dir', './src',
+         '--files', '*.ts',
+         '--one-week',
+         '--c4component',
+         '--rollup',
+         '--design-file', 'DESIGN.md'
+      ]);
+
+      expect(options.designFile).toBe('DESIGN.md');
+   });
+
    it('rejects --skip-headers without diagram flags', () => {
       expect(() => parseArgs([
          '--dir', './src',

@@ -1,10 +1,10 @@
-# C4-Auto Agent Instructions
+# AutoDoc Agent Instructions
 
-Instructions for AI assistants working on the `@jonverrier/c4-auto` package. This is a **standalone** repository — not part of a monorepo workspace.
+Instructions for AI assistants working on the `@jonverrier/auto-doc` package (formerly `@jonverrier/c4-auto`). This is a **standalone** repository — not part of a monorepo workspace.
 
 ## Project Overview
 
-C4-Auto is a publishable Node.js CLI that generates C4 architecture documentation for TypeScript codebases. It walks a directory tree, refreshes LLM-generated module header comments in source files, writes per-directory C4 Component/Context markdown, and optionally rolls up nested trees into package-level summaries at the scan root.
+AutoDoc is a publishable Node.js CLI that generates C4 architecture documentation for TypeScript codebases. It walks a directory tree, refreshes LLM-generated module header comments in source files, writes per-directory C4 Component/Context markdown, and optionally rolls up nested trees into package-level summaries at the scan root using human design intent when available.
 
 **Generated output only** — never modify the project `README.md`.
 
@@ -17,12 +17,13 @@ Default generated filenames (Strong AI convention, overridable via CLI):
 
 ```text
 src/
-  generate-docs-cli.ts      CLI entry (bin: c4-auto)
+  generate-docs-cli.ts      CLI entry (bin: auto-doc; legacy alias c4-auto)
   DirectoryTreeTraverser.ts Tree walk + detectSubdirectorySources()
   VisitorFactory.ts         Wires production visitors
   ModuleHeaderVisitor.ts    kFirst — source file headers
   C4DiagramVisitor.ts       kSecond — per-directory C4 READMEs
   RollupC4Visitor.ts        kThird — root rollup in finalize()
+  DesignContextUtils.ts     Design.md/DESIGN.md discovery for rollup context
   C4ReadmeUtils.ts          Output filenames, datestamp/staleness helpers
   ModuleHeaderExtract.ts    Header block extraction from .ts sources
   DocGenTypes.ts            Shared interfaces and enums
@@ -50,8 +51,8 @@ Output filenames come from `IDocGenOptions.componentOutputFile` and `contextOutp
 |-----------|-----------|
 | Flat tree (no nested matching sources) | Per-directory C4 at root; rollup skipped |
 | Nested tree + `--rollup` | Subdirs get per-directory C4; root READMEs are rollup-only |
-| Rollup input | Subdirectory README content + root module headers (`(root)` section) |
-| Rollup staleness | Use `isRollupOutputStale()` — not the same as per-directory README staleness |
+| Rollup input | Subdirectory README content + root module headers (`(root)` section) + optional design intent |
+| Rollup staleness | Use `isRollupOutputStale()` — includes design file mtime when available |
 
 Do not write per-directory root C4 and rollup root C4 in the same run for nested trees.
 
@@ -98,4 +99,4 @@ npm pack --dry-run     # verify dist-only tarball
 ## Related Packages
 
 - **PromptRepository** (`@jonverrier/prompt-repository`) — LLM drivers and prompt expansion.
-- **C4-Agent** — MCP server for interactive C4 diagram generation (separate repo).
+- **AgentDoc** — MCP server for interactive C4 diagram generation (separate repo; formerly C4-Agent).

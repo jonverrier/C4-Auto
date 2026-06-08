@@ -1,7 +1,7 @@
 {
-  "name": "@jonverrier/c4-auto",
-  "version": "0.2.2",
-  "description": "Automated C4 architecture documentation for TypeScript projects",
+  "name": "@jonverrier/auto-doc",
+  "version": "1.0.0",
+  "description": "AutoDoc — automated C4 architecture documentation for TypeScript projects",
   "private": false,
   "engines": {
     "node": "22.x"
@@ -14,17 +14,19 @@
     "registry": "https://npm.pkg.github.com"
   },
   "bin": {
+    "auto-doc": "dist/generate-docs-cli.js",
     "c4-auto": "dist/generate-docs-cli.js"
   },
   "files": [
     "dist/**/*",
-    "README.md"
+    "README.md",
+    "MIGRATION.md"
   ],
   "scripts": {
     "build": "rimraf dist && tsc && npm run copy-assets",
     "copy-assets": "copyfiles -u 1 src/Prompts.json dist/",
     "prepublishOnly": "npm run build",
-    "generate-docs": "c4-auto --dir ./src --files \"*.ts\" \"*.tsx\" --one-month --c4component --c4context --rollup",
+    "generate-docs": "auto-doc --dir ./src --files \"*.ts\" \"*.tsx\" --one-month --c4component --c4context --rollup",
     "test": "jest --selectProjects unit",
     "test:ci": "jest --selectProjects ci",
     "test:integration": "jest --selectProjects integration",

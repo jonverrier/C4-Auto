@@ -154,6 +154,7 @@ export function extractReadmeGeneratedDate(content: string): Date | null {
  * @param existingRootReadme - Current root rollup content, if any
  * @param childReadmeContents - Subdirectory README inputs for this diagram type
  * @param rootModuleHeaderDates - Dates parsed from root-level module header sentinels
+ * @param designFileModifiedAt - Last-modified time of the human design doc, if loaded
  * @param options - Doc-gen options including jobStartedAt and timeWindow
  * @returns True when rollup output should be rewritten
  */
@@ -161,7 +162,8 @@ export function isRollupOutputStale(
    existingRootReadme: string | null,
    childReadmeContents: string[],
    rootModuleHeaderDates: Date[],
-   options: IDocGenOptions
+   options: IDocGenOptions,
+   designFileModifiedAt: Date | null = null
 ): boolean {
    if (isReadmeOutputStale(existingRootReadme, options)) {
       return true;
@@ -183,6 +185,10 @@ export function isRollupOutputStale(
       if (headerDate.getTime() >= rootRollupDate.getTime()) {
          return true;
       }
+   }
+
+   if (designFileModifiedAt && designFileModifiedAt.getTime() >= rootRollupDate.getTime()) {
+      return true;
    }
 
    return false;
